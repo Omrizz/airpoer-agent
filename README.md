@@ -4,7 +4,7 @@ An AI agent that helps analysts screen US airports for terminal-expansion potent
 
 **How AI is used:** Claude picks tools, interprets questions, and explains results. **All numbers come from deterministic code** (scoring, ranking, shares, comparisons), and a grounding check flags any figure in an answer that does not trace back to tool output.
 
-Design docs: [Scoring methodology](docs/SCORING.md) · [Tool contract and agent](docs/TOOLS.md) · [Data check](DATA_CHECK.md)
+Design docs: **[Design overview](docs/DESIGN.md)** · [Scoring methodology](docs/SCORING.md) · [Tool contract and agent](docs/TOOLS.md) · [Data check](DATA_CHECK.md)
 
 ## Run it
 
@@ -23,7 +23,7 @@ Other commands:
 | `npm run chat` | Terminal chat |
 | `npm run web:demo` | UI with **scripted** answers built from the real tools (no API key or credits needed; clearly labelled) |
 | `npm run eval` | Runs the sample questions, follow-ups and a boundary probe against the live model and writes `docs/EVAL.md` (spends API tokens) |
-| `npm test` | 70 tests: scoring, tools against real data, agent loop (scripted fake model), server, markdown renderer |
+| `npm test` | 75 tests: scoring, tools against real data, agent loop (scripted fake model), server, markdown renderer |
 | `npm run build-metrics` | Rebuilds `airport_metrics` from the downloaded data |
 | `npm run export-snapshot` | Writes the tables the agent reads to `snapshot/*.parquet` |
 
