@@ -6,6 +6,7 @@
     "test": "vitest run",
     "typecheck": "tsc --noEmit",
     "build-metrics": "node scripts/build-metrics.ts",
+    "export-snapshot": "node scripts/export-snapshot.ts",
     "score": "node scripts/score-cli.ts",
     "chat": "node --env-file=.env scripts/chat.ts",
     "eval": "node --env-file=.env scripts/eval.ts",

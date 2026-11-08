@@ -2,6 +2,7 @@ import { z } from "zod";
 import { compareAirports, compareInput } from "./compare.ts";
 import { demandGap, demandGapInput } from "./demandGap.ts";
 import { err, type ToolResult } from "./envelope.ts";
+import { liveStatus, liveStatusInput } from "./liveStatus.ts";
 import { methodology, methodologyInput } from "./methodology.ts";
 import { rankAirports, rankInput } from "./rank.ts";
 import { resolveAirports, resolveInput } from "./resolve.ts";
@@ -48,6 +49,12 @@ export const TOOLS: ToolDef[] = [
     "Evidence about unmet or constrained demand at one airport: monthly load factors, months above a 'full' threshold, a seat-shortfall proxy, demand-vs-seat growth, ground congestion, and nearby alternatives that may absorb spill. Unmet demand is NOT directly measurable; this tool returns proxies and a list of what cannot be measured. Use for 'what is the unmet demand at X and why'.",
     demandGapInput,
     demandGap,
+  ),
+  def(
+    "live_status",
+    "Current FAA National Airspace System status (live API call) for 1-6 airports: active ground stops, ground delay programs, closures and general delays, with reasons. Use only when the user asks what is happening NOW or about current delays. It is a point-in-time reading, separate from the historical scores; never use it to compute or adjust a score.",
+    liveStatusInput,
+    liveStatus,
   ),
   def(
     "get_methodology",

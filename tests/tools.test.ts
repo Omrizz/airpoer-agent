@@ -1,12 +1,9 @@
 // Integration tests for the tool layer against the real DuckDB snapshot (no LLM, no network).
-// Skipped automatically if the database has not been built.
-import { existsSync } from "node:fs";
-import path from "node:path";
+// The database is built from the committed parquet snapshot on first use, so these always run.
 import { describe, expect, it } from "vitest";
 import { anthropicTools, runTool } from "../src/tools/index.ts";
 
-const hasDb = existsSync(path.resolve(import.meta.dirname, "../data/airports.duckdb"));
-const d = hasDb ? describe : describe.skip;
+const d = describe;
 
 async function call(name: string, input: unknown) {
   const r = await runTool(name, input);
@@ -16,7 +13,7 @@ async function call(name: string, input: unknown) {
 describe("tool schemas", () => {
   it("exposes valid JSON schemas with descriptions", () => {
     const tools = anthropicTools();
-    expect(tools.map((t) => t.name)).toEqual(["resolve_airports", "rank_airports", "compare_airports", "route_mix", "demand_gap", "get_methodology"]);
+    expect(tools.map((t) => t.name)).toEqual(["resolve_airports", "rank_airports", "compare_airports", "route_mix", "demand_gap", "live_status", "get_methodology"]);
     for (const t of tools) {
       expect(t.description.length).toBeGreaterThan(40);
       expect(t.input_schema.type).toBe("object");

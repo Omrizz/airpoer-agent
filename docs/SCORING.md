@@ -51,6 +51,6 @@ Confidence = high (0 issues), medium (1), low (2+). The editorial flag does not 
 ## Reproduce
 ```
 npm run build-metrics     # T-100 + OTP + TAF -> airport_metrics table
-npm test                  # 18 unit tests on the scoring module
+npm test                  # unit tests on the scoring module
 npm run score -- --region NE --detail PWM
 ```
