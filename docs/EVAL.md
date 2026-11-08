@@ -1,5 +1,7 @@
 # Evaluation run
 
+> **Note:** this run was recorded before the on-time data grew from 1 to 6 months. Figures and rankings in the answers below (for example Portland ranking second in New England) are from the older data and differ from the current snapshot. Re-run `npm run eval` (needs an API key, about $0.30) to refresh it.
+
 Model: `claude-opus-5-5`, effort: `medium`. Checks are deterministic (tool use, required mentions, number grounding); they do not judge answer quality, so read the answers.
 
 

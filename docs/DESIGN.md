@@ -44,7 +44,7 @@ Question answered: *where would extra terminal capacity be absorbed by demand th
 ## How the four sample questions are handled
 | Question | Approach | What is surfaced |
 |---|---|---|
-| New England candidates | `resolve_airports` then `rank_airports` | Peer-set floor, top-5 stability, one month of congestion data |
+| New England candidates | `resolve_airports` then `rank_airports` | Peer-set floor, top-5 stability, 6 alternating months of congestion data |
 | LA vs Santa Ana congestion | `compare_airports` (LAX, SNA) | LA assumed to mean LAX, ~5x scale difference, on-time coverage |
 | Anchorage long-haul % | `route_mix` | No standard definition: default 3,000+ mi, sensitivity 1,500-4,000 mi; cargo departures outnumber passenger ones, so passenger, cargo and all-flights shares are all returned |
 | SFO unmet demand and why | `demand_gap` | Not directly measurable; proxies only (load factor, months above 85%, seat-shortfall proxy, growth, congestion, OAK/SJC spill), plus the runway/fog note |
@@ -59,11 +59,11 @@ Question answered: *where would extra terminal capacity be absorbed by demand th
 
 ## Assumptions, uncertainty and scope (what the agent must say)
 - Data window: T-100 through the latest loaded month (12-month window); FAA TAF 2025 edition. Each answer names its period from `data_as_of`.
-- **Congestion rests on limited on-time data** (one summer month in the committed snapshot) and on large reporting carriers only (about 50% of ANC and 73-76% of BOS/LAX/SFO passenger departures). Every airport carries the `single_season_otp` flag until more months are loaded.
+- **Congestion rests on 6 alternating months of on-time data** (Jul, Sep, Nov 2025; Jan, Mar, May 2026: all seasons, not every month) and on large reporting carriers only (about 50% of ANC and 73-76% of BOS/LAX/SFO passenger departures). Airports with fewer than 6 months of on-time data carry the `single_season_otp` flag.
 - Scores screen for demand pressure. They do not model construction cost, returns, gate or runway capacity, or whether the terminal is the binding constraint.
 - Leisure-heavy secondary airports (e.g. SFB, PIE) score high on load factor and growth and may overstate terminal need.
-- FAA forecasts are smooth and are the FAA's, not ours. Not used: FAA CATS revenue per passenger, DB1B fares and Census growth (none loaded); these would add a dollar estimate and a fare-based unmet-demand signal.
+- FAA forecasts are smooth and are the FAA's, not ours. Not used: FAA CATS revenue per passenger (the FAA publishes it only one airport at a time, with no bulk export, so it was not collected), DB1B fares and Census growth; these would add a dollar estimate and a fare-based unmet-demand signal. As a result, "size of prize" is measured in forecast enplanements, not dollars.
 - `live_status` depends on an external service and fails softly; the agent then says live status is unavailable.
 
 ## Verification
-75 tests (scoring, tools against the real snapshot, agent loop with a scripted fake model, server, live-status parser with a fixture). `npm run eval` runs the sample questions, follow-ups and an out-of-scope probe against the live model; results are in [EVAL.md](EVAL.md).
+75 tests (scoring, tools against the real snapshot, agent loop with a scripted fake model, server, live-status parser with a fixture). `npm run eval` runs the sample questions, follow-ups and an out-of-scope probe against the live model; results are in [EVAL.md](EVAL.md) (recorded before the 6-month on-time rebuild, so its figures are older than the current data).
