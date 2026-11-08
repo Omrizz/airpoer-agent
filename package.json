@@ -7,6 +7,7 @@
     "typecheck": "tsc --noEmit",
     "build-metrics": "node scripts/build-metrics.ts",
     "export-snapshot": "node scripts/export-snapshot.ts",
+    "live-sample": "node scripts/live-sample.ts",
     "score": "node scripts/score-cli.ts",
     "chat": "node --env-file=.env scripts/chat.ts",
     "eval": "node --env-file=.env scripts/eval.ts",

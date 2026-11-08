@@ -23,8 +23,9 @@ Other commands:
 | `npm run chat` | Terminal chat |
 | `npm run web:demo` | UI with **scripted** answers built from the real tools (no API key or credits needed; clearly labelled) |
 | `npm run eval` | Runs the sample questions, follow-ups and a boundary probe against the live model and writes `docs/EVAL.md` (spends API tokens) |
-| `npm test` | 75 tests: scoring, tools against real data, agent loop (scripted fake model), server, markdown renderer |
+| `npm test` | 76 tests: scoring, tools against real data, agent loop (scripted fake model), server, markdown renderer |
 | `npm run build-metrics` | Rebuilds `airport_metrics` from the downloaded data |
+| `npm run live-sample` | Saves the live FAA NAS Status feed to `samples/` and lists airports with active programs (to capture a real fixture) |
 | `npm run export-snapshot` | Writes the tables the agent reads to `snapshot/*.parquet` |
 
 ## Data
