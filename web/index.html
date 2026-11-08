@@ -1,0 +1,40 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Airport Investment Intelligence Agent</title>
+  <link rel="stylesheet" href="/style.css">
+</head>
+<body>
+  <header>
+    <div>
+      <h1>Airport Investment Intelligence</h1>
+      <p class="sub">Screens US airports for terminal-expansion potential from public aviation data. Scores are deterministic; the AI chooses tools and explains.</p>
+    </div>
+    <div class="actions">
+      <label class="toggle" id="speakWrap" hidden><input type="checkbox" id="speak"> Read answers aloud</label>
+      <button type="button" id="newchat" class="ghost">New chat</button>
+    </div>
+  </header>
+
+  <div id="banner" class="banner" role="status" hidden></div>
+
+  <main id="log" aria-live="polite" aria-label="Conversation">
+    <section id="welcome" class="welcome">
+      <p>Ask about airport investment opportunities. Try:</p>
+      <div class="chips" id="chips"></div>
+      <p class="fine">Every answer shows the tools it used and states its assumptions. Figures that cannot be traced to tool output are flagged.</p>
+    </section>
+  </main>
+
+  <form id="form" autocomplete="off">
+    <label for="input" class="sr">Your question</label>
+    <textarea id="input" rows="1" maxlength="2000" placeholder="Ask a question, e.g. Compare LA and Santa Ana airport congestion levels" required></textarea>
+    <button type="button" id="mic" class="ghost" aria-label="Speak your question" title="Speak your question" hidden>🎤</button>
+    <button type="submit" id="send">Send</button>
+  </form>
+
+  <script type="module" src="/app.js"></script>
+</body>
+</html>

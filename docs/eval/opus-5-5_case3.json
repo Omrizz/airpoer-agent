@@ -1,0 +1,30 @@
+{
+  "model": "claude-opus-5-5",
+  "effort": "medium",
+  "passed": 7,
+  "total": 7,
+  "costUsd": 0.044527000000000004,
+  "turns": [
+    {
+      "case": "3. Long-haul share out of Anchorage",
+      "label": "ask",
+      "tools": [
+        "resolve_airports",
+        "route_mix",
+        "route_mix"
+      ],
+      "checks": 7,
+      "passed": 7,
+      "failed": [],
+      "modelCalls": 3,
+      "outputTokens": 1143,
+      "inputTokens": 14799,
+      "cacheRead": 10900,
+      "costUsd": 0.044527000000000004,
+      "words": 312,
+      "groundingChecked": 36,
+      "groundingTraced": 36,
+      "untraced": []
+    }
+  ]
+}

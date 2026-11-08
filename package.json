@@ -1,0 +1,31 @@
+{
+  "name": "airport-agent",
+  "version": "1.0.0",
+  "description": "",
+  "scripts": {
+    "test": "vitest run",
+    "typecheck": "tsc --noEmit",
+    "build-metrics": "node scripts/build-metrics.ts",
+    "score": "node scripts/score-cli.ts",
+    "chat": "node --env-file=.env scripts/chat.ts",
+    "eval": "node --env-file=.env scripts/eval.ts",
+    "web": "node --env-file=.env src/server/main.ts",
+    "web:demo": "node src/server/main.ts --demo",
+    "compare-models": "node scripts/compare-models.ts"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "module",
+  "dependencies": {
+    "@anthropic-ai/sdk": "^1.6.0",
+    "@duckdb/node-api": "^2.0.0-r.1",
+    "exceljs": "^4.4.0",
+    "zod": "^4.6.7"
+  },
+  "devDependencies": {
+    "@types/node": "^26.6.6",
+    "typescript": "^7.0.2",
+    "vitest": "^5.1.0"
+  }
+}

@@ -1,0 +1,30 @@
+{
+  "model": "claude-sonnet-5-5",
+  "effort": "medium",
+  "passed": 7,
+  "total": 7,
+  "costUsd": 0.011824900000000001,
+  "turns": [
+    {
+      "case": "3. Long-haul share out of Anchorage",
+      "label": "ask",
+      "tools": [
+        "route_mix"
+      ],
+      "checks": 7,
+      "passed": 7,
+      "failed": [],
+      "modelCalls": 2,
+      "outputTokens": 645,
+      "inputTokens": 8501,
+      "cacheRead": 6902,
+      "costUsd": 0.011824900000000001,
+      "words": 233,
+      "groundingChecked": 28,
+      "groundingTraced": 27,
+      "untraced": [
+        "43"
+      ]
+    }
+  ]
+}

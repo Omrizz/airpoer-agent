@@ -1,0 +1,159 @@
+{
+  "model": "claude-sonnet-5-5",
+  "effort": "medium",
+  "passed": 35,
+  "total": 35,
+  "costUsd": 0.1099725,
+  "turns": [
+    {
+      "case": "1. New England terminal-expansion candidates (+ follow-ups)",
+      "label": "ask",
+      "tools": [
+        "rank_airports"
+      ],
+      "checks": 6,
+      "passed": 6,
+      "failed": [],
+      "modelCalls": 2,
+      "outputTokens": 1094,
+      "inputTokens": 12853,
+      "cacheRead": 6900,
+      "costUsd": 0.0271995,
+      "words": 466,
+      "groundingChecked": 32,
+      "groundingTraced": 31,
+      "untraced": [
+        "2.3%"
+      ]
+    },
+    {
+      "case": "1. New England terminal-expansion candidates (+ follow-ups)",
+      "label": "follow-up (explain)",
+      "tools": [],
+      "checks": 4,
+      "passed": 4,
+      "failed": [],
+      "modelCalls": 1,
+      "outputTokens": 1067,
+      "inputTokens": 10462,
+      "cacheRead": 9397,
+      "costUsd": 0.015209899999999998,
+      "words": 336,
+      "groundingChecked": 43,
+      "groundingTraced": 39,
+      "untraced": [
+        "1.9",
+        "0.3",
+        "7.8",
+        "5.5"
+      ]
+    },
+    {
+      "case": "1. New England terminal-expansion candidates (+ follow-ups)",
+      "label": "follow-up (re-weight)",
+      "tools": [
+        "rank_airports"
+      ],
+      "checks": 3,
+      "passed": 3,
+      "failed": [],
+      "modelCalls": 2,
+      "outputTokens": 1087,
+      "inputTokens": 29106,
+      "cacheRead": 22003,
+      "costUsd": 0.0330251,
+      "words": 448,
+      "groundingChecked": 40,
+      "groundingTraced": 38,
+      "untraced": [
+        "9.2",
+        "2.3%"
+      ]
+    },
+    {
+      "case": "2. LA vs Santa Ana congestion",
+      "label": "ask",
+      "tools": [
+        "resolve_airports",
+        "resolve_airports",
+        "compare_airports"
+      ],
+      "checks": 6,
+      "passed": 6,
+      "failed": [],
+      "modelCalls": 3,
+      "outputTokens": 979,
+      "inputTokens": 14346,
+      "cacheRead": 14338,
+      "costUsd": 0.0126736,
+      "words": 348,
+      "groundingChecked": 27,
+      "groundingTraced": 24,
+      "untraced": [
+        "90",
+        "4.0%"
+      ]
+    },
+    {
+      "case": "3. Long-haul share out of Anchorage",
+      "label": "ask",
+      "tools": [
+        "route_mix"
+      ],
+      "checks": 6,
+      "passed": 6,
+      "failed": [],
+      "modelCalls": 2,
+      "outputTokens": 622,
+      "inputTokens": 8393,
+      "cacheRead": 8387,
+      "costUsd": 0.0079094,
+      "words": 228,
+      "groundingChecked": 32,
+      "groundingTraced": 31,
+      "untraced": [
+        "1,499"
+      ]
+    },
+    {
+      "case": "4. Unmet demand at SFO",
+      "label": "ask",
+      "tools": [
+        "demand_gap"
+      ],
+      "checks": 6,
+      "passed": 6,
+      "failed": [],
+      "modelCalls": 2,
+      "outputTokens": 772,
+      "inputTokens": 8884,
+      "cacheRead": 8878,
+      "costUsd": 0.0095076,
+      "words": 320,
+      "groundingChecked": 24,
+      "groundingTraced": 23,
+      "untraced": [
+        "70,000"
+      ]
+    },
+    {
+      "case": "5. Boundary: out of scope",
+      "label": "ask",
+      "tools": [],
+      "checks": 4,
+      "passed": 4,
+      "failed": [],
+      "modelCalls": 1,
+      "outputTokens": 375,
+      "inputTokens": 3451,
+      "cacheRead": 3447,
+      "costUsd": 0.004447400000000001,
+      "words": 197,
+      "groundingChecked": 1,
+      "groundingTraced": 0,
+      "untraced": [
+        "100,"
+      ]
+    }
+  ]
+}
