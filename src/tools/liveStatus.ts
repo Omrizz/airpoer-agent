@@ -49,14 +49,19 @@ export interface NasProgram { program: string; details: Record<string, string> }
  * named parent (e.g. "Ground Delay Programs"). Deliberately does not depend on the exact feed layout.
  */
 export function programsForAirport(root: XNode, code: string): NasProgram[] {
-  const found: NasProgram[] = [];
+  return allPrograms(root).filter((p) => p.airport === code).map(({ airport: _a, ...rest }) => rest);
+}
+
+/** Every program in the feed, for any airport (used by `npm run live-sample` and by programsForAirport). */
+export function allPrograms(root: XNode): (NasProgram & { airport: string })[] {
+  const found: (NasProgram & { airport: string })[] = [];
   const walk = (n: XNode, programName: string) => {
     const name = n.children.find((c) => c.tag.toLowerCase() === "name" && !c.children.length);
     const here = name && clean(name.text) ? clean(name.text) : programName;
     const arpt = n.children.find((c) => c.tag.toUpperCase() === "ARPT");
-    if (arpt && clean(arpt.text).toUpperCase() === code) {
+    if (arpt && clean(arpt.text)) {
       const { ARPT: _a, ...details } = leaves({ ...n, children: n.children.filter((c) => c !== arpt) });
-      found.push({ program: here || n.tag.replace(/_/g, " "), details });
+      found.push({ airport: clean(arpt.text).toUpperCase(), program: here || n.tag.replace(/_/g, " "), details });
     }
     for (const c of n.children) walk(c, here);
   };

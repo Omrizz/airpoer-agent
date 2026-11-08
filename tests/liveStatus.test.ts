@@ -57,3 +57,11 @@ describe("live_status tool", () => {
     expect(f).not.toHaveBeenCalled();
   });
 });
+
+describe("allPrograms", () => {
+  it("lists programs for every airport in the feed", async () => {
+    const { allPrograms } = await import("../src/tools/liveStatus.ts");
+    const all = allPrograms(parseXml(XML));
+    expect(all.map((p) => p.airport).sort()).toEqual(["EWR", "SFO"]);
+  });
+});
