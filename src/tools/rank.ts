@@ -83,7 +83,7 @@ export async function rankAirports(input: z.infer<typeof rankInput>): Promise<To
   const flagCodes = new Set(top.flatMap((t) => t.flags.map((f) => f.slice(1, f.indexOf("]")))));
 
   const caveats = [
-    ...(flagCodes.has("single_season_otp") ? ["Congestion uses a single month of on-time data (a summer peak), so it may overstate year-round congestion."] : []),
+    ...(flagCodes.has("single_season_otp") ? ["For some airports congestion rests on fewer than 6 months of on-time data, so it may reflect one season."] : []),
     ...(flagCodes.has("low_otp_coverage") ? ["For some airports, on-time data covers well under all departures (large carriers only)."] : []),
     ...(flagCodes.has("editorial_constraint") ? ["Some airports carry a hand-written note that their binding constraint may not be the terminal; this does not change the score."] : []),
     "Taxi-out and delay are proxies for congestion, not measures of runway capacity.",

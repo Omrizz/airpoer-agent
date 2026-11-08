@@ -9,7 +9,7 @@ The LLM chooses tools and explains results. **All numbers come from deterministi
 { ok: false, error, hint? }        // returned to the model as is_error; it can retry or explain
 ```
 - `assumptions`: definitions and thresholds chosen (e.g. "long-haul = 3,000+ miles"). The agent restates the ones that matter.
-- `caveats`: limits that apply to this specific result (e.g. cargo outnumbers passenger flights; one month of on-time data).
+- `caveats`: limits that apply to this specific result (e.g. cargo outnumbers passenger flights; on-time data months, fewer than 6 flagged).
 - `data_as_of`: T-100 window, on-time months, forecast edition, so answers can name their period.
 
 ## Tools
@@ -28,7 +28,7 @@ Validation: inputs are checked with Zod; IATA codes are regex-validated before t
 ## How each exam question maps
 | Question | Tools | Judgement calls surfaced to the user |
 |---|---|---|
-| Strong New England expansion candidates | `resolve_airports` -> `rank_airports` | Peer-set floor (smaller airports not scored), one month of congestion data, stability of the top 5 |
+| Strong New England expansion candidates | `resolve_airports` -> `rank_airports` | Peer-set floor (smaller airports not scored), on-time months (6 alternating), stability of the top 5 |
 | LA vs Santa Ana congestion | `resolve_airports` -> `compare_airports` | LA = LAX (alternatives exist), scale difference (~5x departures), on-time coverage |
 | % long-haul out of Anchorage | `route_mix` | Threshold (no standard definition; sensitivity shown), cargo flights outnumber passenger flights |
 | Unmet demand at SFO and why | `demand_gap` (+ `rank_airports` if asked) | Not directly measurable; proxies only; runway/fog note; spill to OAK/SJC |

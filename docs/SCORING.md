@@ -37,10 +37,10 @@ US airports with at least 300k departing passengers in the last 12 months (passe
 Confidence = high (0 issues), medium (1), low (2+). The editorial flag does not change confidence.
 
 ## Sensitivity check
-`sensitivity()` re-ranks with each component weight scaled by 0.8 and 1.2 (9 scenarios) and reports min/max rank and how often each top-K airport stays in the top K. Current result: the national top 5 and the New England top 5 are both stable.
+`sensitivity()` re-ranks with each component weight scaled by 0.8 and 1.2 (9 scenarios) and reports min/max rank and how often each top-K airport stays in the top K. Current result: the New England top 5 (BOS, BGR, BTV, PWM, BDL) keeps its order in all 9 scenarios. The national top 5 is **not** stable: MCO stays first, SFO, ORD and EWR trade places in ranks 2-4, and #5 JFK is displaced by #6 SFB in 4 of 9 scenarios, so treat ranks 5 and 6 as a tie.
 
 ## Known limitations (must be stated to users)
-- **On-time data is one month so far (July 2025, a peak month)**, so congestion is seasonally biased until more months are loaded. All airports carry the `single_season_otp` flag.
+- **On-time data covers 6 alternating months** (Jul, Sep, Nov 2025; Jan, Mar, May 2026): every season is represented, but not every month, so congestion is an estimate of typical conditions, not a full-year measurement. The `single_season_otp` flag fires only for airports with fewer than 6 months of on-time data.
 - On-time data covers large reporting carriers only (about 50% of ANC, 73-76% of BOS/LAX/SFO departures).
 - Taxi-out and delay are *proxies* for congestion, not runway capacity. No dataset here measures capacity or unmet demand directly.
 - Leisure-heavy secondary airports with ultra-low-cost carriers (SFB, PIE) score high on load factor and growth; this reflects the data, and may overstate terminal need.

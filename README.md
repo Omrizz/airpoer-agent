@@ -54,6 +54,6 @@ scripts/       data download/convert, metrics build, CLI chat, eval
 ```
 
 ## Limits (read before trusting a ranking)
-- Congestion uses limited on-time data (one summer month so far) and covers large carriers only.
+- Congestion uses 6 alternating months of on-time data (Jul, Sep, Nov 2025; Jan, Mar, May 2026), so all seasons are represented but not every month, and it covers large reporting carriers only.
 - Scores screen for demand pressure; they do not model cost, returns, or whether the terminal is the binding constraint.
 - "Unmet demand" is not directly measurable; the agent reports proxies.
