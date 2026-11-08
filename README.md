@@ -23,12 +23,15 @@ Other commands:
 | `npm run chat` | Terminal chat |
 | `npm run web:demo` | UI with **scripted** answers built from the real tools (no API key or credits needed; clearly labelled) |
 | `npm run eval` | Runs the sample questions, follow-ups and a boundary probe against the live model and writes `docs/EVAL.md` (spends API tokens) |
-| `npm test` | 68 tests: scoring, tools against real data, agent loop (scripted fake model), server, markdown renderer |
+| `npm test` | 70 tests: scoring, tools against real data, agent loop (scripted fake model), server, markdown renderer |
 | `npm run build-metrics` | Rebuilds `airport_metrics` from the downloaded data |
+| `npm run export-snapshot` | Writes the tables the agent reads to `snapshot/*.parquet` |
 
 ## Data
 
-`data/` is not committed (about 600 MB). To rebuild it:
+**Fresh clone: nothing to download.** The processed tables the agent reads are committed as `snapshot/*.parquet` (about 22 MB). On first use the app builds `data/airports.duckdb` from them automatically, so `npm install && npm run web:demo` works straight away.
+
+The raw source files (`data/`, about 600 MB) are not committed. To refresh the data from the public sources, rebuild them, then run `npm run export-snapshot` to update the committed snapshot:
 
 1. `node scripts/download-t100.mjs 2024 2025 2026`, then unzip each into `data/t100/<year>/` (BTS T-100 segments, all carriers).
 2. Download BTS On-Time Performance months from `transtats.bts.gov/PREZIP/` into `data/raw/`, unzip into `data/otp/<month>/`.
@@ -43,6 +46,7 @@ See [DATA_CHECK.md](DATA_CHECK.md) for sources, quirks and checks.
 src/scoring/   deterministic score, percentile ranking, sensitivity
 src/tools/     six tools the agent can call (zod-validated, uniform result envelope)
 src/agent/     system prompt, tool loop, grounding check, cost estimate
+src/data/      DuckDB access, region/window helpers, snapshot loader
 src/server/    dependency-free HTTP + SSE server (localhost only)
 web/           chat UI (vanilla JS): trace, score charts, voice in/out
 scripts/       data download/convert, metrics build, CLI chat, eval

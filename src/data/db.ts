@@ -1,14 +1,22 @@
 import { DuckDBInstance, type DuckDBConnection } from "@duckdb/node-api";
+import { existsSync } from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import type { AirportMetrics } from "../scoring/types.ts";
+import { buildFromSnapshot } from "./snapshot.ts";
 
 const here = path.dirname(fileURLToPath(import.meta.url));
 const DB_PATH = process.env.AIRPORT_DB ?? path.resolve(here, "../../data/airports.duckdb");
 
+const SNAPSHOT_DIR = path.resolve(here, "../../snapshot");
+
 let connection: Promise<DuckDBConnection> | null = null;
 export function db(): Promise<DuckDBConnection> {
-  connection ??= DuckDBInstance.create(DB_PATH, { access_mode: "READ_ONLY" }).then((i) => i.connect());
+  connection ??= (async () => {
+    // Fresh clone: build the database from the committed parquet snapshot on first use.
+    if (!existsSync(DB_PATH)) await buildFromSnapshot(DB_PATH, SNAPSHOT_DIR);
+    return (await DuckDBInstance.create(DB_PATH, { access_mode: "READ_ONLY" })).connect();
+  })();
   return connection;
 }
 
