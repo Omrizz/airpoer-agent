@@ -20,6 +20,7 @@ The LLM chooses tools and explains results. **All numbers come from deterministi
 | `compare_airports` | `airports[2..6]` | Compare X and Y on scale, demand, congestion | Per-airport metrics, deterministic "who is higher, by what ratio" contrasts, scores |
 | `route_mix` | `airport`, `service?`, `long_haul_miles?`, `year?` | Share of long-haul flights; route-length mix | Share at the chosen threshold, **sensitivity across 1,500-4,000 mi**, distance bands, passenger vs all-cargo mix, top long-haul destinations |
 | `demand_gap` | `airport`, `target_load_factor?`, `nearby_miles?` | Unmet / constrained demand and why | Monthly load factors, months above target, seat-shortfall **proxy**, demand-vs-seat growth, congestion, nearby alternatives, evidence list, `cannot_be_measured_here` |
+| `live_status` | `airports[1..6]` | What is happening right now (FAA ground stops, delay programs, closures) | Per-airport active programs with reason and times, FAA update time. **Live HTTP call** to the FAA NAS Status feed; point-in-time only, never used in scoring |
 | `get_methodology` | none | How scores work, limits | Peer set, components, weights, flags, what is not modelled |
 
 Validation: inputs are checked with Zod; IATA codes are regex-validated before they reach SQL (tested against injection). Failures never throw: they come back as `is_error` results.

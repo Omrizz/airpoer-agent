@@ -13,7 +13,7 @@ async function call(name: string, input: unknown) {
 describe("tool schemas", () => {
   it("exposes valid JSON schemas with descriptions", () => {
     const tools = anthropicTools();
-    expect(tools.map((t) => t.name)).toEqual(["resolve_airports", "rank_airports", "compare_airports", "route_mix", "demand_gap", "get_methodology"]);
+    expect(tools.map((t) => t.name)).toEqual(["resolve_airports", "rank_airports", "compare_airports", "route_mix", "demand_gap", "live_status", "get_methodology"]);
     for (const t of tools) {
       expect(t.description.length).toBeGreaterThan(40);
       expect(t.input_schema.type).toBe("object");
