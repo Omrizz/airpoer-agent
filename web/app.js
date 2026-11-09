@@ -37,25 +37,83 @@ async function init() {
 }
 
 // ---------- visualisations built from tool results ----------
+// Which metrics feed which component (mirrors src/scoring/config.ts; labels only, no numbers).
+const METRICS = {
+  demand_pressure: { load_factor: "Load factor (12 mo)", peak_month_load_factor: "Peak-month load factor", demand_supply_gap: "Passenger growth minus seat growth" },
+  congestion: { p90_taxi_out: "P90 taxi-out time", pct_dep_delayed_15: "Departures delayed 15+ min", nas_delay_share: "Delay share from air system / volume" },
+  growth: { pax_growth_yoy: "Passenger growth, 12 mo vs prior", taf_cagr_10y: "FAA forecast growth, 10-yr CAGR" },
+  scale: { forecast_added_enplanements: "FAA forecast added enplanements by 2035", ltm_pax: "Passengers (12 mo)" },
+};
+const CONF_TIP = { high: "No data-quality flags", medium: "One data-quality flag: see details", low: "Two or more data-quality flags: see details" };
+
+function splitMetric(v) { // "81.3% (p81)" -> ["81.3%", 81]
+  const m = /^(.*?)\s*\(p(\d+)\)$/.exec(v ?? "");
+  return m ? [m[1], Number(m[2])] : [v ?? "n/a", null];
+}
+
+function rankDetail(a, sensRow, data) {
+  const box = el("div", "rdetail");
+  const facts = [`${a.name ?? a.iata}${a.state ? `, ${a.state}` : ""}`, `national rank ${a.national_rank} of ${data.peer_set_size}`];
+  if (sensRow) {
+    const [lo, hi] = sensRow.rank_range;
+    facts.push(lo === hi ? `rank unchanged when weights shift ${data.sensitivity.shift}` : `rank moves ${lo} to ${hi} when weights shift ${data.sensitivity.shift}`);
+  }
+  box.append(el("p", "rfacts", facts.join(" · ")));
+  const t = el("table", "rtable"), hr = el("tr");
+  for (const h of ["Component / metric", "Value", "National percentile", "Score × weight = points"]) hr.append(el("th", null, h));
+  const thead = el("thead"); thead.append(hr); t.append(thead);
+  const tb = el("tbody");
+  for (const [id, label] of Object.entries(COMP)) {
+    const c = a.components[id];
+    const tr = el("tr", "rcomp");
+    const name = el("td"); const sw = el("i", `sw c-${id}`); name.append(sw, label);
+    tr.append(name, el("td"), el("td"), el("td", "num", c && c.score != null ? `${c.score} × ${c.weight_pct}% = ${c.points}` : "no data (weight re-spread)"));
+    tb.append(tr);
+    for (const [mid, mlabel] of Object.entries(METRICS[id])) {
+      const [val, pct] = splitMetric(a.metrics?.[mid]);
+      const mr = el("tr", "rmetric");
+      const pc = el("td");
+      if (pct != null) { const m = el("span", "pbar"); const f = el("span"); f.style.width = `${pct}%`; m.append(f); pc.append(m, el("span", "num", `p${pct}`)); } else pc.textContent = "n/a";
+      mr.append(el("td", null, mlabel), el("td", "num", val), pc, el("td"));
+      tb.append(mr);
+    }
+  }
+  const tot = el("tr", "rtotal"); tot.append(el("td", null, "Total"), el("td"), el("td"), el("td", "num", `${a.score} / 100`)); tb.append(tot);
+  t.append(tb);
+  const w = el("div", "tablewrap"); w.append(t); box.append(w);
+  for (const f of a.flags ?? []) box.append(el("p", "rflag", f.replace(/^\[[a-z_]+\]\s*/, "⚠ ")));
+  return box;
+}
+
 function renderRank(data) {
   const wrap = el("div", "viz");
-  wrap.append(el("h4", null, `Score breakdown: ${data.scope} (points contributed by each component)`));
+  wrap.append(el("h4", null, `Score breakdown: ${data.scope}`));
+  const w = data.weights_used_pct ?? {};
+  wrap.append(el("p", "vizsub", `Each bar is the 0–100 opportunity score, split into the points each component adds (component score × weight). Percentiles compare against ${data.peer_set_size ?? "all"} US airports with 300k+ departing passengers a year. Click a row for the inputs.`));
   const legend = el("div", "legend");
-  for (const [id, label] of Object.entries(COMP)) { const s = el("span"); const i = el("i", `c-${id}`); s.append(i, label); legend.append(s); }
+  for (const [id, label] of Object.entries(COMP)) { const s = el("span"); const i = el("i", `c-${id}`); s.append(i, w[id] != null ? `${label} ${w[id]}%` : label); legend.append(s); }
   wrap.append(legend);
+  const sens = new Map((data.sensitivity?.rows ?? []).map((r) => [r.iata, r]));
   for (const a of data.ranked) {
-    const row = el("div", "rank");
+    const det = el("details", "rankrow");
+    const row = el("summary", "rank");
     row.append(el("span", "num", String(a.rank)));
     const code = el("span", "code", a.iata); code.title = a.name ?? ""; row.append(code);
-    const bar = el("div", "bar"); bar.title = `${a.name ?? a.iata} · confidence ${a.confidence}`;
+    const bar = el("div", "bar"); bar.title = `${a.name ?? a.iata}: ${a.score} points`;
     for (const id of Object.keys(COMP)) {
       const c = a.components[id]; if (!c || !c.points) continue;
-      const s = el("span", `c-${id}`); s.style.width = `${c.points}%`; s.title = `${COMP[id]}: ${c.points} pts (score ${c.score}, weight ${c.weight_pct}%)`; bar.append(s);
+      const s = el("span", `c-${id}`); s.style.width = `${c.points}%`; s.title = `${COMP[id]}: ${c.points} pts (score ${c.score} × weight ${c.weight_pct}%)`; bar.append(s);
     }
-    row.append(bar, el("span", "num", String(a.score)));
-    wrap.append(row);
+    const conf = el("span", `confchip ${a.confidence}`, a.confidence); conf.title = `Data confidence: ${CONF_TIP[a.confidence] ?? a.confidence}`;
+    row.append(bar, el("span", "num score", String(a.score)), conf);
+    det.append(row);
+    det.addEventListener("toggle", () => { if (det.open && det.children.length === 1) det.append(rankDetail(a, sens.get(a.iata), data)); }, { once: false });
+    wrap.append(det);
   }
-  if (data.sensitivity) wrap.append(el("div", "conf", `Top ${data.sensitivity.top_k} ${data.sensitivity.stable ? "holds" : "does NOT hold"} when each weight shifts ${data.sensitivity.shift}.`));
+  const notes = [];
+  if (data.sensitivity) notes.push(`Top ${data.sensitivity.top_k} ${data.sensitivity.stable ? "holds" : "does NOT hold (treat neighbouring ranks as ties)"} when each weight shifts ${data.sensitivity.shift}.`);
+  if (data.not_scored_in_scope_total) notes.push(`${data.not_scored_in_scope_total} smaller or seasonal airports in scope were not scored (below the traffic floor or incomplete history), not scored low.`);
+  for (const n of notes) wrap.append(el("div", "conf", n));
   return wrap;
 }
 
@@ -82,6 +140,20 @@ function renderCompare(data) {
   return wrap;
 }
 
+// "Data used" line: which datasets and which months the numbers in this answer come from.
+function provenance(b) {
+  if (!b.sources.size && !b.asOf) return null;
+  const d = el("details", "prov");
+  const a = b.asOf;
+  d.append(el("summary", null, a ? `Data: traffic ${a.t100_ltm_window} · on-time ${a.otp_months?.length ?? 0} sampled months · FAA forecast 2025 edition` : "Data sources"));
+  const ul = el("ul");
+  for (const src of b.sources) ul.append(el("li", null, src));
+  if (a?.otp_months?.length) ul.append(el("li", null, `On-time months sampled: ${a.otp_months.join(", ")} (congestion may not reflect every season)`));
+  if (a?.taf_edition) ul.append(el("li", null, a.taf_edition));
+  d.append(ul);
+  return d;
+}
+
 // ---------- conversation ----------
 function addUser(text) { $("welcome")?.remove(); const m = el("div", "msg"); m.append(el("div", "user", text)); log.append(m); scrollDown(); }
 
@@ -92,7 +164,7 @@ function addBot() {
   const sum = el("summary", null, "Tools used"); const list = el("ul"); trace.append(sum, list);
   const viz = el("div"); const foot = el("div", "foot");
   box.append(answer, viz, trace, foot); msg.append(box); log.append(msg); scrollDown();
-  return { answer, trace, sum, list, viz, foot, text: "", items: new Map(), tools: 0, started: false };
+  return { answer, trace, sum, list, viz, foot, text: "", items: new Map(), tools: 0, started: false, sources: new Set(), asOf: null };
 }
 
 function stopSpeaking() { try { window.speechSynthesis?.cancel(); } catch { /* ignore */ } }
@@ -125,6 +197,7 @@ async function ask(text) {
       if (it) { it.st.className = `st ${ev.ok ? "ok" : "err"}`; it.st.textContent = ev.ok ? `✓ ${ev.ms} ms` : "✗ error"; }
       try {
         const payload = JSON.parse(ev.content);
+        if (ev.ok && payload.ok) { for (const src of payload.sources ?? []) b.sources.add(src); b.asOf ??= payload.data_as_of; }
         if (ev.ok && payload.ok && ev.name === "rank_airports" && payload.data.ranked?.length) { b.viz.replaceChildren(renderRank(payload.data)); }
         if (ev.ok && payload.ok && ev.name === "compare_airports") { b.viz.replaceChildren(renderCompare(payload.data)); }
       } catch { /* non-JSON: no chart */ }
@@ -142,6 +215,8 @@ async function ask(text) {
       const cost = money(ev.estimatedCostUsd);
       const u = ev.usage;
       b.foot.append(el("span", null, `${ev.model}${cost ? ` · ≈${cost}` : ""}${u && (u.input || u.output) ? ` · ${(u.input + u.cacheRead + u.cacheWrite).toLocaleString()} in (${u.cacheRead.toLocaleString()} cached) / ${u.output.toLocaleString()} out` : ""}`));
+      const prov = provenance(b);
+      if (prov) b.foot.after(prov);
       speak(b.text);
     } else if (ev.type === "error") {
       b.answer.replaceChildren(el("span", "error", ev.message));
