@@ -212,7 +212,7 @@ function shapeAnswer(root) {
   const box = el("aside", "limits");
   box.append(el("h5", null, "Assumptions and limits"));
   let n = head.nextElementSibling;
-  while (n && !/^H[3-6]$/.test(n.tagName)) { const next = n.nextElementSibling; box.append(n); n = next; }
+  while (n && !isHead(n)) { const next = n.nextElementSibling; box.append(n); n = next; }
   head.replaceWith(box);
 }
 
