@@ -1,4 +1,5 @@
 import { renderMarkdown, stripMarkdown } from "./md.js";
+import { startBackdrop } from "./backdrop.js";
 
 const $ = (id) => document.getElementById(id);
 const log = $("log"), form = $("form"), input = $("input"), sendBtn = $("send"), micBtn = $("mic");
@@ -13,6 +14,7 @@ let sessionId;
 try { sessionId = sessionStorage.getItem("sid"); } catch { /* storage may be blocked */ }
 if (!sessionId) { sessionId = crypto.randomUUID(); try { sessionStorage.setItem("sid", sessionId); } catch { /* ignore */ } }
 let busy = false;
+let stopBackdrop = null;
 
 // ---------- helpers ----------
 const el = (tag, cls, text) => { const e = document.createElement(tag); if (cls) e.className = cls; if (text != null) e.textContent = text; return e; };
@@ -23,6 +25,15 @@ const COMP = { demand_pressure: "Demand pressure", congestion: "Congestion", gro
 
 // ---------- banner + chips ----------
 async function init() {
+  // Decorative route-network animation behind the welcome screen; removed on the first question.
+  const host = el("div", "backdrop-host");
+  const placeHost = () => { host.style.top = `${document.querySelector("header").getBoundingClientRect().bottom}px`; };
+  placeHost(); window.addEventListener("resize", placeHost);
+  document.body.prepend(host);
+  startBackdrop(host).then((stop) => {
+    if (!$("welcome")) stop?.(); else stopBackdrop = stop;
+    if (!stop) host.remove();
+  });
   for (const q of SAMPLES) {
     const b = el("button", "chip", q); b.type = "button";
     b.addEventListener("click", () => ask(q));
@@ -155,7 +166,7 @@ function provenance(b) {
 }
 
 // ---------- conversation ----------
-function addUser(text) { $("welcome")?.remove(); const m = el("div", "msg"); m.append(el("div", "user", text)); log.append(m); scrollDown(); }
+function addUser(text) { $("welcome")?.remove(); stopBackdrop?.(); stopBackdrop = null; const m = el("div", "msg"); m.append(el("div", "user", text)); log.append(m); scrollDown(); }
 
 function addBot() {
   const msg = el("div", "msg"), box = el("div", "bot");
