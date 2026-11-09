@@ -153,3 +153,16 @@ describe("welcome backdrop data", () => {
     for (const a of d.airports) { expect(a.lat).toBeGreaterThan(24); expect(a.lon).toBeLessThan(-66); }
   }, 60000);
 });
+
+describe("welcome method card data", () => {
+  it("serves the scoring components, weights summing to 100, and the peer set size", async () => {
+    await start();
+    const res = await fetch(base + "/api/method");
+    expect(res.status).toBe(200);
+    const d = await res.json() as { components: { id: string; default_weight_pct: number; metrics: unknown[] }[]; peer_set_size: number; data_as_of: { t100_ltm_window: string } };
+    expect(d.components.map((c) => c.id)).toEqual(["demand_pressure", "congestion", "growth", "scale"]);
+    expect(d.components.reduce((s, c) => s + c.default_weight_pct, 0)).toBe(100);
+    expect(d.peer_set_size).toBeGreaterThan(50);
+    expect(d.data_as_of.t100_ltm_window).toMatch(/\d{4}-\d{2} to \d{4}-\d{2}/);
+  }, 60000);
+});
