@@ -4,10 +4,10 @@ import { startBackdrop } from "./backdrop.js";
 const $ = (id) => document.getElementById(id);
 const log = $("log"), form = $("form"), input = $("input"), sendBtn = $("send"), micBtn = $("mic");
 const SAMPLES = [
-  "Which airports in New England are strong candidates for terminal expansion?",
-  "Compare LA and Santa Ana airport congestion levels.",
-  "What is the percentage of long haul flights out of Anchorage airport?",
-  "What is the unmet flight demand in SFO airport and why?",
+  ["Rank", "Which airports in New England are strong candidates for terminal expansion?"],
+  ["Compare", "Compare LA and Santa Ana airport congestion levels."],
+  ["Route mix", "What is the percentage of long haul flights out of Anchorage airport?"],
+  ["Demand gap", "What is the unmet flight demand in SFO airport and why?"],
 ];
 
 let sessionId;
@@ -34,17 +34,48 @@ async function init() {
     if (!$("welcome")) stop?.(); else stopBackdrop = stop;
     if (!stop) host.remove();
   });
-  for (const q of SAMPLES) {
-    const b = el("button", "chip", q); b.type = "button";
+  for (const [kind, q] of SAMPLES) {
+    const b = el("button", "example"); b.type = "button";
+    b.append(el("span", "exkind", kind), el("span", "exq", q));
     b.addEventListener("click", () => ask(q));
     $("chips").append(b);
   }
+  loadMethod();
   try {
     const h = await (await fetch("/api/health")).json();
     const banner = $("banner");
     if (h.demo) { banner.textContent = "DEMO MODE: scripted answers built from the real tools, not a language model. Only the four example questions work."; banner.hidden = false; }
     else if (!h.ready) { banner.textContent = "Chat is disabled: no ANTHROPIC_API_KEY found. Put it in .env and restart, or run npm run web:demo."; banner.hidden = false; sendBtn.disabled = true; }
   } catch { /* offline: leave UI usable, errors show on send */ }
+}
+
+// ---------- welcome: the scoring method, read from the server's scoring config ----------
+async function loadMethod() {
+  let m;
+  try { const r = await fetch("/api/method"); if (!r.ok) return; m = await r.json(); } catch { return; }
+  if (!$("welcome")) return;
+  $("methodLede").textContent = `A 0–100 screening score for where added terminal capacity would be used. Each metric is ranked against ${m.peer_set_size} US peer airports as a national percentile, metrics roll up into four components, and the components are weighted into the total.`;
+  const bar = $("wbar"), cols = $("wcols");
+  bar.setAttribute("aria-label", `Default weights: ${m.components.map((c) => `${c.label} ${c.default_weight_pct}%`).join(", ")}`);
+  cols.style.gridTemplateColumns = m.components.map((c) => `${c.default_weight_pct}fr`).join(" ");
+  bar.style.gridTemplateColumns = cols.style.gridTemplateColumns;
+  for (const c of m.components) {
+    const seg = el("span", `c-${c.id}`); seg.title = `${c.label}: ${c.default_weight_pct}%`; bar.append(seg);
+    const col = el("div", "wcol");
+    const head = el("div", "wcol-head"); head.append(el("span", "wpct", `${c.default_weight_pct}%`), el("span", "wlabel", c.label));
+    const ul = el("ul");
+    for (const x of c.metrics) ul.append(el("li", null, x.label));
+    col.append(head, ul); cols.append(col);
+  }
+  const a = m.data_as_of ?? {};
+  const facts = [
+    ["Peer set", `${m.peer_set_size} airports with ${m.peer_set.replace(/^US airports with /, "")}`],
+    ["Data window", `Traffic ${a.t100_ltm_window ?? "n/a"}; on-time data from ${a.otp_months?.length ?? 0} sampled months; FAA forecast 2025 edition.`],
+    ["Uncertainty", "Each ranking reports a confidence level and re-runs with every weight shifted ±20% to show whether the order holds."],
+    ["Not modelled", `${m.not_modelled.join("; ")}.`],
+  ];
+  for (const [k, v] of facts) { const d = el("div"); d.append(el("dt", null, k), el("dd", null, v)); $("methodFacts").append(d); }
+  $("method").hidden = false;
 }
 
 // ---------- visualisations built from tool results ----------
@@ -165,6 +196,26 @@ function provenance(b) {
   return d;
 }
 
+// Lead with the answer, set the caveats apart: the first paragraph becomes the takeaway, and the
+// "Assumptions and limits" section (heading or bold line, plus what follows it) moves into a quieter callout.
+const LIMITS_RE = /^(assumptions|limits|caveats|assumptions (and|&) (limits|caveats))\s*:?$/i;
+function shapeAnswer(root) {
+  const first = root.firstElementChild;
+  if (first?.tagName === "P") {
+    first.classList.add("lead");
+    const tag = first.firstElementChild; // "Demo answer (scripted, not model output)." label, if present
+    if (tag?.tagName === "STRONG" && /^demo answer/i.test(tag.textContent)) { tag.className = "demo-tag"; tag.textContent = "Demo answer, scripted"; }
+  }
+  const isHead = (n) => /^H[3-6]$/.test(n.tagName) || (n.tagName === "P" && n.childNodes.length === 1 && n.firstChild.nodeName === "STRONG");
+  const head = [...root.children].find((n) => isHead(n) && LIMITS_RE.test(n.textContent.trim()));
+  if (!head) return;
+  const box = el("aside", "limits");
+  box.append(el("h5", null, "Assumptions and limits"));
+  let n = head.nextElementSibling;
+  while (n && !/^H[3-6]$/.test(n.tagName)) { const next = n.nextElementSibling; box.append(n); n = next; }
+  head.replaceWith(box);
+}
+
 // ---------- conversation ----------
 function addUser(text) { $("welcome")?.remove(); stopBackdrop?.(); stopBackdrop = null; const m = el("div", "msg"); m.append(el("div", "user", text)); log.append(m); scrollDown(); }
 
@@ -195,7 +246,7 @@ async function ask(text) {
   addUser(text); input.value = ""; autosize();
   const b = addBot();
   let timer = 0; // setTimeout, not requestAnimationFrame: rAF stops entirely in background tabs
-  const paint = () => { timer = 0; b.answer.innerHTML = renderMarkdown(b.text); scrollDown(); };
+  const paint = () => { timer = 0; b.answer.innerHTML = renderMarkdown(b.text); shapeAnswer(b.answer); scrollDown(); };
 
   const handle = (ev) => {
     if (ev.type === "text_delta") { b.text += ev.text; if (!timer) timer = setTimeout(paint, 50); }
@@ -216,6 +267,7 @@ async function ask(text) {
     else if (ev.type === "done") {
       if (timer) clearTimeout(timer);
       b.text = ev.text || b.text; paint();
+      const lim = b.answer.querySelector(".limits"); if (lim) b.viz.after(lim); // answer, then chart, then caveats
       const g = ev.grounding;
       if (g && g.checked) {
         const ok = g.untraced.length === 0;
@@ -228,6 +280,7 @@ async function ask(text) {
       b.foot.append(el("span", null, `${ev.model}${cost ? ` · ≈${cost}` : ""}${u && (u.input || u.output) ? ` · ${(u.input + u.cacheRead + u.cacheWrite).toLocaleString()} in (${u.cacheRead.toLocaleString()} cached) / ${u.output.toLocaleString()} out` : ""}`));
       const prov = provenance(b);
       if (prov) b.foot.after(prov);
+      scrollDown();
       speak(b.text);
     } else if (ev.type === "error") {
       b.answer.replaceChildren(el("span", "error", ev.message));

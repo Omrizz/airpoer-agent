@@ -87,6 +87,18 @@ export function createApp(opts: AppOptions): http.Server {
         } catch { return json(res, 503, { error: "Backdrop data unavailable." }); }
       }
 
+      if (req.method === "GET" && url.pathname === "/api/method") {
+        // Scoring method for the welcome screen, read from the same config the scorer uses (no hand-copied numbers).
+        try {
+          const [{ methodology }, { allMetrics }, { scoreAirports }] = await Promise.all([
+            import("../tools/methodology.ts"), import("../data/db.ts"), import("../scoring/index.ts"),
+          ]);
+          const m = await methodology();
+          if (!m.ok) return json(res, 503, { error: "Method unavailable." });
+          return json(res, 200, { ...(m.data as object), peer_set_size: scoreAirports(await allMetrics()).length, data_as_of: m.data_as_of, sources: m.sources });
+        } catch { return json(res, 503, { error: "Method unavailable." }); }
+      }
+
       if (req.method === "POST" && url.pathname === "/api/reset") {
         const { sessionId } = JSON.parse((await readBody(req)) || "{}") as { sessionId?: string };
         if (sessionId) sessions.delete(sessionId);

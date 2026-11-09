@@ -22,9 +22,18 @@
 
   <main id="log" aria-live="polite" aria-label="Conversation">
     <section id="welcome" class="welcome">
-      <p>Ask about airport investment opportunities. Try:</p>
-      <div class="chips" id="chips"></div>
-      <p class="fine">Every answer shows the tools it used and states its assumptions. Figures that cannot be traced to tool output are flagged.</p>
+      <section class="method" id="method" aria-labelledby="methodTitle" hidden>
+        <h2 id="methodTitle">How airports are scored</h2>
+        <p class="method-lede" id="methodLede"></p>
+        <div class="wbar" id="wbar" role="img"></div>
+        <div class="wcols" id="wcols"></div>
+        <dl class="method-facts" id="methodFacts"></dl>
+      </section>
+      <section class="examples" aria-labelledby="exTitle">
+        <h2 id="exTitle">Try a question</h2>
+        <div class="exlist" id="chips"></div>
+        <p class="fine">Every answer lists the tools it used and states its assumptions. Figures that cannot be traced to tool output are flagged.</p>
+      </section>
     </section>
   </main>
 
