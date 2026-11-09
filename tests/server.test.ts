@@ -139,3 +139,17 @@ describe("hardening", () => {
     expect(await rawGet({ host: `localhost:${PORT}`, origin: `http://localhost:${PORT}` })).toBe(200);
   });
 });
+
+describe("welcome backdrop data", () => {
+  it("serves real airports and routes between them", async () => {
+    await start();
+    const res = await fetch(base + "/api/backdrop");
+    expect(res.status).toBe(200);
+    const d = await res.json() as { airports: { iata: string; lat: number; lon: number; pax: number }[]; routes: { a: string; b: string; pax: number }[] };
+    expect(d.airports.length).toBeGreaterThan(20);
+    expect(d.routes.length).toBeGreaterThan(50);
+    const codes = new Set(d.airports.map((a) => a.iata));
+    for (const r of d.routes) { expect(codes.has(r.a) && codes.has(r.b)).toBe(true); expect(r.a < r.b).toBe(true); }
+    for (const a of d.airports) { expect(a.lat).toBeGreaterThan(24); expect(a.lon).toBeLessThan(-66); }
+  }, 60000);
+});

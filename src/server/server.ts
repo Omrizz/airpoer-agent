@@ -11,6 +11,7 @@ const STATIC: Record<string, { file: string; type: string }> = {
   "/style.css": { file: "style.css", type: "text/css; charset=utf-8" },
   "/app.js": { file: "app.js", type: "text/javascript; charset=utf-8" },
   "/md.js": { file: "md.js", type: "text/javascript; charset=utf-8" },
+  "/backdrop.js": { file: "backdrop.js", type: "text/javascript; charset=utf-8" },
 };
 
 const MAX_BODY = 16 * 1024;
@@ -75,6 +76,15 @@ export function createApp(opts: AppOptions): http.Server {
 
       if (req.method === "GET" && url.pathname === "/api/health") {
         return json(res, 200, { ok: true, ready: !!opts.agentFactory, demo: !!opts.demo });
+      }
+
+      if (req.method === "GET" && url.pathname === "/api/backdrop") {
+        // Decorative only. Loaded lazily so the server (and its tests) never touch the database for it unless asked.
+        try {
+          const { backdrop } = await import("../data/backdrop.ts");
+          res.writeHead(200, { "content-type": "application/json; charset=utf-8", "cache-control": "max-age=3600" });
+          return void res.end(JSON.stringify(await backdrop()));
+        } catch { return json(res, 503, { error: "Backdrop data unavailable." }); }
       }
 
       if (req.method === "POST" && url.pathname === "/api/reset") {

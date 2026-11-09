@@ -49,9 +49,13 @@ src/tools/     six tools the agent can call (zod-validated, uniform result envel
 src/agent/     system prompt, tool loop, grounding check, cost estimate
 src/data/      DuckDB access, region/window helpers, snapshot loader
 src/server/    dependency-free HTTP + SSE server (localhost only)
-web/           chat UI (vanilla JS): trace, score charts, voice in/out
+web/           chat UI (vanilla JS): trace, score charts, voice in/out; welcome backdrop (decorative)
 scripts/       data download/convert, metrics build, CLI chat, eval
 ```
+
+## Welcome backdrop (decorative)
+
+The landing screen shows particles flying the 160 busiest routes between the 60 busiest lower-48 airports (last 12 months of T-100, via `GET /api/backdrop`), spawned in proportion to passengers, with hub dots sized by traffic. It is decoration, not a chart: it has no axes or values, uses a fixed seed so every load looks the same, goes static under reduced-motion, is hidden on phones, and disappears once the first question is asked. It plays no part in scoring.
 
 ## Limits (read before trusting a ranking)
 - Congestion uses 6 alternating months of on-time data (Jul, Sep, Nov 2025; Jan, Mar, May 2026), so all seasons are represented but not every month, and it covers large reporting carriers only.
