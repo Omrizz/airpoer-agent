@@ -1,5 +1,5 @@
 import http from "node:http";
-import { afterEach, describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import type { AgentEvent, ChatAgent, TurnResult } from "../src/agent/agent.ts";
 import { createApp } from "../src/server/server.ts";
 
@@ -165,4 +165,32 @@ describe("welcome method card data", () => {
     expect(d.peer_set_size).toBeGreaterThan(50);
     expect(d.data_as_of.t100_ltm_window).toMatch(/\d{4}-\d{2} to \d{4}-\d{2}/);
   }, 60000);
+});
+
+describe("stopping a turn", () => {
+  it("aborts the agent when the client disconnects, then accepts the next question", async () => {
+    let seen: AbortSignal | undefined;
+    class Slow extends FakeAgent {
+      override async send(text: string, onEvent: (e: AgentEvent) => void = () => {}, signal?: AbortSignal) {
+        seen = signal;
+        onEvent({ type: "text_delta", text: "partial" });
+        await new Promise<void>((resolve) => { if (signal?.aborted) resolve(); else signal?.addEventListener("abort", () => resolve()); });
+        return result("never delivered");
+      }
+    }
+    await start({ agentFactory: () => new Slow() });
+    const ctl = new AbortController();
+    const r = await fetch(base + "/api/chat", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ sessionId: "session-stop1", message: "hi" }), signal: ctl.signal });
+    const reader = r.body!.getReader();
+    await reader.read(); // first frame arrived: the turn is running
+    ctl.abort();
+    await vi.waitFor(() => expect(seen?.aborted).toBe(true));
+    const again = await vi.waitFor(async () => {
+      const x = await post("/api/chat", { sessionId: "session-stop1", message: "again" });
+      if (x.status === 409) throw new Error("still busy");
+      return x;
+    });
+    expect(again.status).toBe(200);
+    again.body?.cancel();
+  });
 });

@@ -15,12 +15,18 @@ try { sessionId = sessionStorage.getItem("sid"); } catch { /* storage may be blo
 if (!sessionId) { sessionId = crypto.randomUUID(); try { sessionStorage.setItem("sid", sessionId); } catch { /* ignore */ } }
 let busy = false;
 let stopBackdrop = null;
+let isDemo = false;
+let currentCtl = null;
 
 // ---------- helpers ----------
 const el = (tag, cls, text) => { const e = document.createElement(tag); if (cls) e.className = cls; if (text != null) e.textContent = text; return e; };
 const scrollDown = () => window.scrollTo({ top: document.body.scrollHeight });
 const money = (v) => (v == null ? null : v < 0.01 ? "<$0.01" : `$${v.toFixed(2)}`);
 const fmtArgs = (o) => Object.entries(o ?? {}).filter(([, v]) => v !== undefined).map(([k, v]) => `${k}=${JSON.stringify(v)}`).join(", ");
+const TOOL_LABEL = {
+  resolve_airports: "Looking up airports", rank_airports: "Ranking airports", compare_airports: "Comparing airports",
+  route_mix: "Checking route mix", demand_gap: "Estimating the demand gap", live_status: "Checking live FAA status", get_methodology: "Reading the scoring method",
+};
 const COMP = { demand_pressure: "Demand pressure", congestion: "Congestion", growth: "Growth outlook", scale: "Size of prize" };
 
 // ---------- banner + chips ----------
@@ -44,6 +50,7 @@ async function init() {
   try {
     const h = await (await fetch("/api/health")).json();
     const banner = $("banner");
+    isDemo = !!h.demo;
     if (h.demo) { banner.textContent = "DEMO MODE: scripted answers built from the real tools, not a language model. Only the four example questions work."; banner.hidden = false; }
     else if (!h.ready) { banner.textContent = "Chat is disabled: no ANTHROPIC_API_KEY found. Put it in .env and restart, or run npm run web:demo."; banner.hidden = false; sendBtn.disabled = true; }
   } catch { /* offline: leave UI usable, errors show on send */ }
@@ -93,6 +100,13 @@ function splitMetric(v) { // "81.3% (p81)" -> ["81.3%", 81]
   return m ? [m[1], Number(m[2])] : [v ?? "n/a", null];
 }
 
+function pointsCell(c) {
+  const td = el("td", "num");
+  if (!c || c.score == null) { td.textContent = "no data (weight re-spread)"; return td; }
+  td.append(el("span", "calc", `${c.score} × ${c.weight_pct}% = `), el("b", null, String(c.points)));
+  return td;
+}
+
 function rankDetail(a, sensRow, data) {
   const box = el("div", "rdetail");
   const facts = [`${a.name ?? a.iata}${a.state ? `, ${a.state}` : ""}`, `national rank ${a.national_rank} of ${data.peer_set_size}`];
@@ -109,7 +123,7 @@ function rankDetail(a, sensRow, data) {
     const c = a.components[id];
     const tr = el("tr", "rcomp");
     const name = el("td"); const sw = el("i", `sw c-${id}`); name.append(sw, label);
-    tr.append(name, el("td"), el("td"), el("td", "num", c && c.score != null ? `${c.score} × ${c.weight_pct}% = ${c.points}` : "no data (weight re-spread)"));
+    tr.append(name, el("td"), el("td"), pointsCell(c));
     tb.append(tr);
     for (const [mid, mlabel] of Object.entries(METRICS[id])) {
       const [val, pct] = splitMetric(a.metrics?.[mid]);
@@ -140,7 +154,7 @@ function renderRank(data) {
     const det = el("details", "rankrow");
     const row = el("summary", "rank");
     row.append(el("span", "num", String(a.rank)));
-    const code = el("span", "code", a.iata); code.title = a.name ?? ""; row.append(code);
+    const code = el("span", "code iata", a.iata); code.title = a.name ?? ""; row.append(code);
     const bar = el("div", "bar"); bar.title = `${a.name ?? a.iata}: ${a.score} points`;
     for (const id of Object.keys(COMP)) {
       const c = a.components[id]; if (!c || !c.points) continue;
@@ -162,44 +176,97 @@ function renderRank(data) {
 function renderCompare(data) {
   const wrap = el("div", "viz");
   wrap.append(el("h4", null, "Side by side"));
+  const n = (v) => (v == null ? null : Number(v));
   const rows = [
-    ["Passengers, 12 mo", (a) => a.scale.passengers_12mo?.toLocaleString()],
-    ["Departures, 12 mo", (a) => a.scale.passenger_departures_12mo?.toLocaleString()],
-    ["Load factor", (a) => a.demand.load_factor_pct != null && `${a.demand.load_factor_pct}%`],
-    ["Avg taxi-out", (a) => a.congestion && `${a.congestion.avg_taxi_out_min} min`],
-    ["P90 taxi-out", (a) => a.congestion && `${a.congestion.p90_taxi_out_min} min`],
-    ["Avg departure delay", (a) => a.congestion && `${a.congestion.avg_departure_delay_min} min`],
-    ["Departures delayed 15+ min", (a) => a.congestion && `${a.congestion.pct_departures_delayed_15}%`],
-    ["Opportunity score", (a) => a.score && String(a.score.total)],
+    ["Passengers, 12 mo", (a) => n(a.scale?.passengers_12mo), (v) => v.toLocaleString()],
+    ["Departures, 12 mo", (a) => n(a.scale?.passenger_departures_12mo), (v) => v.toLocaleString()],
+    ["Load factor", (a) => n(a.demand?.load_factor_pct), (v) => `${v}%`],
+    ["Avg taxi-out", (a) => n(a.congestion?.avg_taxi_out_min), (v) => `${v} min`],
+    ["P90 taxi-out", (a) => n(a.congestion?.p90_taxi_out_min), (v) => `${v} min`],
+    ["Avg departure delay", (a) => n(a.congestion?.avg_departure_delay_min), (v) => `${v} min`],
+    ["Departures delayed 15+ min", (a) => n(a.congestion?.pct_departures_delayed_15), (v) => `${v}%`],
+    ["Opportunity score", (a) => n(a.score?.total), (v) => String(v)],
   ];
-  const t = el("table"), thead = el("thead"), hr = el("tr"); hr.append(el("th", null, ""));
-  for (const a of data.airports) hr.append(el("th", null, a.iata));
+  const t = el("table", "cmp"), thead = el("thead"), hr = el("tr"); hr.append(el("th", null, ""));
+  for (const a of data.airports) { const th = el("th", "num"); th.append(el("span", "iata", a.iata)); hr.append(th); }
   thead.append(hr); t.append(thead);
   const tb = el("tbody");
-  for (const [label, get] of rows) { const tr = el("tr"); tr.append(el("td", null, label)); for (const a of data.airports) tr.append(el("td", null, get(a) || "n/a")); tb.append(tr); }
+  for (const [label, get, fmt] of rows) {
+    const vals = data.airports.map(get), known = vals.filter((v) => v != null);
+    const top = known.length >= 2 && new Set(known).size > 1 ? Math.max(...known) : null;
+    const tr = el("tr"); tr.append(el("td", null, label));
+    vals.forEach((v) => tr.append(el("td", `num${top != null && v === top ? " hi" : ""}`, v == null ? "n/a" : fmt(v))));
+    tb.append(tr);
+  }
   t.append(tb);
   const w = el("div", "tablewrap"); w.append(t); wrap.append(w);
+  wrap.append(el("div", "conf", "Bold marks the higher value in each row. Higher is not always better: more taxi-out or delay means more congestion, which raises the opportunity score."));
   return wrap;
 }
 
-// "Data used" line: which datasets and which months the numbers in this answer come from.
+// Data panel: which datasets and which months the numbers in this answer come from.
 function provenance(b) {
   if (!b.sources.size && !b.asOf) return null;
-  const d = el("details", "prov");
-  const a = b.asOf;
-  d.append(el("summary", null, a ? `Data: traffic ${a.t100_ltm_window} · on-time ${a.otp_months?.length ?? 0} sampled months · FAA forecast 2025 edition` : "Data sources"));
+  const a = b.asOf, panel = el("div", "epanel");
   const ul = el("ul");
   for (const src of b.sources) ul.append(el("li", null, src));
   if (a?.otp_months?.length) ul.append(el("li", null, `On-time months sampled: ${a.otp_months.join(", ")} (congestion may not reflect every season)`));
   if (a?.taf_edition) ul.append(el("li", null, a.taf_edition));
-  d.append(ul);
-  return d;
+  panel.append(ul);
+  return { label: a ? `Data: ${a.t100_ltm_window}` : "Data sources", panel };
+}
+
+// One row of chips under an answer; each opens its own panel. Tools, grounding and data in one place.
+function addChip(b, label, panel, cls = "") {
+  const c = el("button", `echip ${cls}`, label); c.type = "button"; c.setAttribute("aria-expanded", "false");
+  panel.hidden = true;
+  c.addEventListener("click", () => { panel.hidden = !panel.hidden; c.setAttribute("aria-expanded", String(!panel.hidden)); });
+  b.foot.append(c); b.panels.append(panel);
+  return c;
+}
+
+// Mark airport codes the tools returned, so BOS, LAX and SNA read like terminal signage wherever they appear.
+function markCodes(root, codes) {
+  if (!codes.size) return;
+  const list = [...codes].join("|"), has = new RegExp(`\\b(${list})\\b`), all = new RegExp(`\\b(${list})\\b`, "g");
+  const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT, {
+    acceptNode: (n) => (n.parentElement.closest("code, pre, .iata") || !has.test(n.nodeValue) ? NodeFilter.FILTER_REJECT : NodeFilter.FILTER_ACCEPT),
+  });
+  const nodes = []; while (walker.nextNode()) nodes.push(walker.currentNode);
+  for (const n of nodes) {
+    const frag = document.createDocumentFragment(); let last = 0; const text = n.nodeValue;
+    text.replace(all, (m, _c, off) => { frag.append(text.slice(last, off), el("span", "iata inline", m)); last = off + m.length; return m; });
+    frag.append(text.slice(last)); n.replaceWith(frag);
+  }
+}
+
+// Suggested next questions, built from what the tools just returned (real-agent mode only: demo mode cannot take follow-ups).
+function followUps(b) {
+  const out = [];
+  for (const r of [...b.results].reverse()) {
+    const d = r.data, ap = r.input?.airport;
+    if (r.name === "rank_airports" && d?.ranked?.length >= 2) {
+      const [x, y] = d.ranked;
+      out.push(`Why does ${x.iata} rank above ${y.iata}?`, "Re-rank with congestion weighted more heavily");
+      if (d.sensitivity && !d.sensitivity.stable) out.push("Which of these ranks are too close to call?");
+      else if (d.not_scored_in_scope_total) out.push("Which airports in this region were not scored, and why?");
+    } else if (r.name === "compare_airports" && d?.airports?.length >= 2) {
+      const [x, y] = d.airports.map((a) => a.iata);
+      out.push(`Which of ${x} and ${y} has the stronger case for terminal expansion?`, `What is the unmet demand at ${x}?`);
+    } else if (r.name === "route_mix" && ap) {
+      out.push(`How does the long-haul share at ${ap} change if long-haul means 2,000+ miles?`, `Is ${ap} a strong candidate for terminal expansion?`);
+    } else if (r.name === "demand_gap" && ap) {
+      out.push(`Is the terminal likely the binding constraint at ${ap}?`, `How does ${ap} rank nationally for expansion potential?`);
+    } else continue;
+    break;
+  }
+  return out.slice(0, 3);
 }
 
 // Lead with the answer, set the caveats apart: the first paragraph becomes the takeaway, and the
 // "Assumptions and limits" section (heading or bold line, plus what follows it) moves into a quieter callout.
 const LIMITS_RE = /^(assumptions|limits|caveats|assumptions (and|&) (limits|caveats))\s*:?$/i;
-function shapeAnswer(root) {
+function shapeAnswer(root, codes) {
   const first = root.firstElementChild;
   if (first?.tagName === "P") {
     first.classList.add("lead");
@@ -208,12 +275,13 @@ function shapeAnswer(root) {
   }
   const isHead = (n) => /^H[3-6]$/.test(n.tagName) || (n.tagName === "P" && n.childNodes.length === 1 && n.firstChild.nodeName === "STRONG");
   const head = [...root.children].find((n) => isHead(n) && LIMITS_RE.test(n.textContent.trim()));
-  if (!head) return;
+  if (!head) { markCodes(root, codes); return; }
   const box = el("aside", "limits");
   box.append(el("h5", null, "Assumptions and limits"));
   let n = head.nextElementSibling;
-  while (n && !/^H[3-6]$/.test(n.tagName)) { const next = n.nextElementSibling; box.append(n); n = next; }
+  while (n && !isHead(n)) { const next = n.nextElementSibling; box.append(n); n = next; }
   head.replaceWith(box);
+  markCodes(root, codes);
 }
 
 // ---------- conversation ----------
@@ -221,12 +289,12 @@ function addUser(text) { $("welcome")?.remove(); stopBackdrop?.(); stopBackdrop 
 
 function addBot() {
   const msg = el("div", "msg"), box = el("div", "bot");
-  const answer = el("div", "answer"); answer.append(el("span", "thinking", "Working on it"));
-  const trace = el("details", "trace"); trace.hidden = true;
-  const sum = el("summary", null, "Tools used"); const list = el("ul"); trace.append(sum, list);
-  const viz = el("div"); const foot = el("div", "foot");
-  box.append(answer, viz, trace, foot); msg.append(box); log.append(msg); scrollDown();
-  return { answer, trace, sum, list, viz, foot, text: "", items: new Map(), tools: 0, started: false, sources: new Set(), asOf: null };
+  const answer = el("div", "answer");
+  const live = el("div", "live thinking", "Working on it");
+  const toolsPanel = el("div", "epanel"); const list = el("ul"); toolsPanel.append(list);
+  const viz = el("div"); const foot = el("div", "foot"); const panels = el("div", "panels");
+  box.append(answer, viz, live, foot, panels); msg.append(box); log.append(msg); scrollDown();
+  return { msg, answer, live, toolsPanel, list, viz, foot, panels, text: "", items: new Map(), running: new Map(), tools: 0, sources: new Set(), asOf: null, codes: new Set(), results: [], calls: new Map() };
 }
 
 function stopSpeaking() { try { window.speechSynthesis?.cancel(); } catch { /* ignore */ } }
@@ -242,53 +310,75 @@ function speak(text) {
 async function ask(text) {
   text = text.trim();
   if (!text || busy) return;
-  busy = true; sendBtn.disabled = true; stopSpeaking();
+  busy = true; stopSpeaking();
+  currentCtl = new AbortController();
+  sendBtn.textContent = "Stop"; sendBtn.classList.add("stop"); sendBtn.setAttribute("aria-label", "Stop answering");
+  document.querySelectorAll(".followups").forEach((f) => f.remove());
   addUser(text); input.value = ""; autosize();
   const b = addBot();
   let timer = 0; // setTimeout, not requestAnimationFrame: rAF stops entirely in background tabs
-  const paint = () => { timer = 0; b.answer.innerHTML = renderMarkdown(b.text); shapeAnswer(b.answer); scrollDown(); };
+  const paint = () => { timer = 0; b.answer.innerHTML = renderMarkdown(b.text); shapeAnswer(b.answer, b.codes); scrollDown(); };
 
   const handle = (ev) => {
     if (ev.type === "text_delta") { b.text += ev.text; if (!timer) timer = setTimeout(paint, 50); }
     else if (ev.type === "tool_call") {
-      b.tools++; b.trace.hidden = false; b.sum.textContent = `Tools used (${b.tools})`;
+      b.tools++; b.calls.set(ev.id, ev);
+      const ap = ev.input?.airport; if (typeof ap === "string" && /^[A-Z]{3}$/.test(ap)) b.codes.add(ap);
+      for (const x of ev.input?.airports ?? []) if (/^[A-Z]{3}$/.test(x)) b.codes.add(x);
       const li = el("li"); const st = el("span", "st run", "…"); const code = el("code", null, `${ev.name}(${fmtArgs(ev.input)})`);
       li.append(st, code); b.list.append(li); b.items.set(ev.id, { st, code });
+      b.running.set(ev.id, TOOL_LABEL[ev.name] ?? ev.name); b.live.textContent = `${[...new Set(b.running.values())].join(", ")}`;
     } else if (ev.type === "tool_result") {
       const it = b.items.get(ev.id);
       if (it) { it.st.className = `st ${ev.ok ? "ok" : "err"}`; it.st.textContent = ev.ok ? `✓ ${ev.ms} ms` : "✗ error"; }
+      b.running.delete(ev.id); b.live.textContent = b.running.size ? [...new Set(b.running.values())].join(", ") : "Writing the answer";
       try {
         const payload = JSON.parse(ev.content);
-        if (ev.ok && payload.ok) { for (const src of payload.sources ?? []) b.sources.add(src); b.asOf ??= payload.data_as_of; }
+        if (ev.ok && payload.ok) {
+          for (const src of payload.sources ?? []) b.sources.add(src); b.asOf ??= payload.data_as_of;
+          b.results.push({ name: ev.name, input: b.calls.get(ev.id)?.input, data: payload.data });
+          for (const r of payload.data?.ranked ?? []) if (r.iata) b.codes.add(r.iata);
+          for (const r of payload.data?.airports ?? []) if (r.iata) b.codes.add(r.iata);
+        }
         if (ev.ok && payload.ok && ev.name === "rank_airports" && payload.data.ranked?.length) { b.viz.replaceChildren(renderRank(payload.data)); }
         if (ev.ok && payload.ok && ev.name === "compare_airports") { b.viz.replaceChildren(renderCompare(payload.data)); }
       } catch { /* non-JSON: no chart */ }
-    } else if (ev.type === "notice") { b.foot.before(el("div", "notice", ev.message)); }
+    } else if (ev.type === "notice") { b.live.before(el("div", "notice", ev.message)); }
     else if (ev.type === "done") {
       if (timer) clearTimeout(timer);
       b.text = ev.text || b.text; paint();
       const lim = b.answer.querySelector(".limits"); if (lim) b.viz.after(lim); // answer, then chart, then caveats
+      b.live.remove();
+      if (b.tools) addChip(b, `Tools used (${b.tools})`, b.toolsPanel);
       const g = ev.grounding;
       if (g && g.checked) {
         const ok = g.untraced.length === 0;
-        const badge = el("span", `badge ${ok ? "good" : "warn"}`, ok ? `All ${g.checked} figures traced to tool output` : `${g.untraced.length} of ${g.checked} figures not traced to tool output`);
-        if (!ok) badge.title = `Not traced: ${g.untraced.join(", ")}. These may be derived values (ratios, differences) or errors; check against the tool trace.`;
-        b.foot.append(badge);
+        const panel = el("div", "epanel");
+        panel.textContent = ok
+          ? `All ${g.checked} figures in this answer were found in the tools' raw output.`
+          : `Not found in tool output: ${g.untraced.join(", ")}. These may be derived values (ratios, differences) or mistakes; check them against the tools used.`;
+        addChip(b, ok ? `All ${g.checked} figures traced to tool output` : `${g.untraced.length} of ${g.checked} figures not traced to tool output`, panel, ok ? "good" : "warn");
       }
+      const prov = provenance(b);
+      if (prov) addChip(b, prov.label, prov.panel);
       const cost = money(ev.estimatedCostUsd);
       const u = ev.usage;
-      b.foot.append(el("span", null, `${ev.model}${cost ? ` · ≈${cost}` : ""}${u && (u.input || u.output) ? ` · ${(u.input + u.cacheRead + u.cacheWrite).toLocaleString()} in (${u.cacheRead.toLocaleString()} cached) / ${u.output.toLocaleString()} out` : ""}`));
-      const prov = provenance(b);
-      if (prov) b.foot.after(prov);
+      b.foot.append(el("span", "meta", `${ev.model}${cost ? ` · ≈${cost}` : ""}${u && (u.input || u.output) ? ` · ${(u.input + u.cacheRead + u.cacheWrite).toLocaleString()} in (${u.cacheRead.toLocaleString()} cached) / ${u.output.toLocaleString()} out` : ""}`));
+      const next = isDemo ? [] : followUps(b);
+      if (next.length) {
+        const f = el("div", "followups"); f.append(el("span", "fhead", "Ask next"));
+        for (const q of next) { const c = el("button", "fchip", q); c.type = "button"; c.addEventListener("click", () => ask(q)); f.append(c); }
+        b.msg.append(f);
+      }
       scrollDown();
       speak(b.text);
     } else if (ev.type === "error") {
-      b.answer.replaceChildren(el("span", "error", ev.message));
+      b.live.remove(); b.answer.replaceChildren(el("span", "error", ev.message));
     }
   };
 
   try {
-    const res = await fetch("/api/chat", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ sessionId, message: text }) });
+    const res = await fetch("/api/chat", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ sessionId, message: text }), signal: currentCtl.signal });
     if (!res.ok) { const j = await res.json().catch(() => ({})); b.answer.replaceChildren(el("span", "error", j.error ?? `Request failed (${res.status}).`)); }
     else {
       const reader = res.body.getReader(), dec = new TextDecoder();
@@ -305,9 +395,14 @@ async function ask(text) {
       }
     }
   } catch {
-    b.answer.replaceChildren(el("span", "error", "Could not reach the server. Is it still running?"));
+    if (currentCtl.signal.aborted) {
+      if (timer) clearTimeout(timer);
+      b.live.remove();
+      if (b.text) { paint(); b.msg.querySelector(".bot").append(el("div", "notice", "Stopped before finishing. This answer may be incomplete.")); }
+      else b.answer.replaceChildren(el("span", "notice", "Stopped."));
+    } else { b.live.remove(); b.answer.replaceChildren(el("span", "error", "Could not reach the server. Is it still running?")); }
   } finally {
-    busy = false; sendBtn.disabled = false; input.focus();
+    busy = false; currentCtl = null; sendBtn.textContent = "Send"; sendBtn.classList.remove("stop"); sendBtn.removeAttribute("aria-label"); input.focus();
   }
 }
 
@@ -318,8 +413,10 @@ function autosize() {
   input.style.overflowY = input.scrollHeight > 160 ? "auto" : "hidden"; // no scrollbar for one-line input
 }
 input.addEventListener("input", autosize);
-input.addEventListener("keydown", (e) => { if (e.key === "Enter" && !e.shiftKey && !e.isComposing) { e.preventDefault(); form.requestSubmit(); } });
-form.addEventListener("submit", (e) => { e.preventDefault(); ask(input.value); });
+input.addEventListener("keydown", (e) => { if (e.key === "Enter" && !e.shiftKey && !e.isComposing) { e.preventDefault(); if (!busy) form.requestSubmit(); } });
+// The Send button doubles as Stop while an answer is running. Handled on click, before the form's required-field check blocks an empty box.
+sendBtn.addEventListener("click", (e) => { if (busy) { e.preventDefault(); currentCtl?.abort(); } });
+form.addEventListener("submit", (e) => { e.preventDefault(); if (!busy) ask(input.value); });
 
 $("newchat").addEventListener("click", async () => {
   stopSpeaking();

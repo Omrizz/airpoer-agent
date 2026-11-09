@@ -28,7 +28,7 @@ export interface TurnResult {
 export interface MessagesClient {
   beta: {
     messages: {
-      stream(params: Anthropic.Beta.MessageCreateParamsNonStreaming): {
+      stream(params: Anthropic.Beta.MessageCreateParamsNonStreaming, options?: { signal?: AbortSignal }): {
         on(event: "text", cb: (delta: string) => void): unknown;
         finalMessage(): Promise<Anthropic.Beta.BetaMessage>;
       };
@@ -48,7 +48,8 @@ export interface AgentOptions {
 /** What the web server needs from an agent; lets tests and demo mode substitute their own. */
 export interface ChatAgent {
   readonly model: string;
-  send(userText: string, onEvent?: (e: AgentEvent) => void): Promise<TurnResult>;
+  /** `signal` stops the turn early (user pressed Stop or closed the page); history is left as it was before the turn. */
+  send(userText: string, onEvent?: (e: AgentEvent) => void, signal?: AbortSignal): Promise<TurnResult>;
 }
 
 export class Agent implements ChatAgent {
@@ -72,7 +73,18 @@ export class Agent implements ChatAgent {
   }
 
   /** Send one user message and run the tool loop to completion. History is kept on the instance. */
-  async send(userText: string, onEvent: (e: AgentEvent) => void = () => {}): Promise<TurnResult> {
+  async send(userText: string, onEvent: (e: AgentEvent) => void = () => {}, signal?: AbortSignal): Promise<TurnResult> {
+    const startMessages = this.messages.length, startOutputs = this.toolOutputs.length;
+    try {
+      return await this.run(userText, onEvent, signal);
+    } catch (e) {
+      // A stopped turn must not leave a dangling user message or tool_use block, or the next request would be rejected.
+      if (signal?.aborted) { this.messages.length = startMessages; this.toolOutputs.length = startOutputs; }
+      throw e;
+    }
+  }
+
+  private async run(userText: string, onEvent: (e: AgentEvent) => void, signal?: AbortSignal): Promise<TurnResult> {
     this.messages.push({ role: "user", content: userText });
     const toolCalls: TurnResult["toolCalls"] = [];
     const usage = { input: 0, output: 0, cacheRead: 0, cacheWrite: 0 };
@@ -82,6 +94,7 @@ export class Agent implements ChatAgent {
     let iterations = 0;
 
     for (; iterations < this.maxToolRounds + 1; iterations++) {
+      signal?.throwIfAborted();
       const stream = this.client.beta.messages.stream({
         model: this.model,
         max_tokens: 16000,
@@ -92,7 +105,7 @@ export class Agent implements ChatAgent {
         messages: this.messages,
         output_config: { effort: this.effort },
         ...(this.fallbacks ? { betas: ["server-side-fallback-2026-07-01"], fallbacks: "default" as const } : {}),
-      });
+      }, signal ? { signal } : undefined);
       stream.on("text", (d) => onEvent({ type: "text_delta", text: d }));
       const msg = await stream.finalMessage();
 
