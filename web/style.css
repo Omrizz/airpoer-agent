@@ -1,3 +1,6 @@
+@font-face { font-family: "IBM Plex Sans"; font-weight: 400; font-style: normal; font-display: swap; src: url("/fonts/plex-400.woff2") format("woff2"); }
+@font-face { font-family: "IBM Plex Sans"; font-weight: 600; font-style: normal; font-display: swap; src: url("/fonts/plex-600.woff2") format("woff2"); }
+@font-face { font-family: "IBM Plex Sans"; font-weight: 700; font-style: normal; font-display: swap; src: url("/fonts/plex-700.woff2") format("woff2"); }
 :root {
   --bg: #f6f7f9; --panel: #ffffff; --text: #1a1f2b; --muted: #5b6577; --line: #dde1e8;
   --accent: #1f5fd1; --accent-text: #ffffff; --user: #e8f0fe; --warn-bg: #fff4d6; --warn-text: #6b4b00;
@@ -13,8 +16,8 @@
   }
 }
 * { box-sizing: border-box; }
-body { margin: 0; background: var(--bg); color: var(--text); font: 15px/1.5 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; display: flex; flex-direction: column; min-height: 100vh; }
-.backdrop-host { position: fixed; left: 0; right: 0; bottom: 0; z-index: 0; pointer-events: none; }
+body { margin: 0; background: var(--bg); color: var(--text); font: 15px/1.5 "IBM Plex Sans", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; display: flex; flex-direction: column; min-height: 100vh; }
+.backdrop-host { position: fixed; left: 0; right: 0; bottom: 0; z-index: 0; pointer-events: none; -webkit-mask-image: linear-gradient(to right, #000 0, #000 calc(50% - 500px), rgba(0,0,0,.3) calc(50% - 450px), rgba(0,0,0,.3) calc(50% + 450px), #000 calc(50% + 500px), #000 100%); mask-image: linear-gradient(to right, #000 0, #000 calc(50% - 500px), rgba(0,0,0,.3) calc(50% - 450px), rgba(0,0,0,.3) calc(50% + 450px), #000 calc(50% + 500px), #000 100%); }
 .backdrop { position: absolute; inset: 0; width: 100%; height: 100%; opacity: 0; transition: opacity .6s ease; }
 .backdrop.on { opacity: 1; }
 header, .banner, main, form { position: relative; z-index: 1; }
@@ -116,7 +119,7 @@ th { color: var(--muted); font-weight: 600; }
 .prov { margin-top: 6px; font-size: 12.5px; color: var(--muted); }
 .prov summary { cursor: pointer; }
 .prov ul { margin: 4px 0 0; padding-left: 20px; }
-.rank .code { font-weight: 600; } .rank .num { text-align: right; font-variant-numeric: tabular-nums; }
+ .rank .num { text-align: right; font-variant-numeric: tabular-nums; }
 .bar { display: flex; height: 16px; background: var(--bg); border-radius: 4px; overflow: hidden; }
 .bar span { display: block; height: 100%; }
 .c-demand_pressure { background: var(--c1); } .c-congestion { background: var(--c2); } .c-growth { background: var(--c3); } .c-scale { background: var(--c4); }
@@ -130,3 +133,40 @@ form { position: sticky; bottom: 0; display: flex; gap: 8px; align-items: flex-e
 textarea { flex: 1; resize: none; font: inherit; color: var(--text); background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 10px 12px; max-height: 160px; }
 #mic.live { border-color: var(--bad); color: var(--bad); }
 @media (max-width: 640px) { .wcol-head { display: block; } .wpct { display: block; } .wcols { grid-template-columns: 1fr 1fr !important; row-gap: 12px; } .wbar { margin-bottom: 4px; } .method-facts div { grid-template-columns: 1fr; gap: 0; } .example { grid-template-columns: 1fr; gap: 2px; } .backdrop-host { display: none; } header { flex-direction: column; } .user { max-width: 92%; } .rank { grid-template-columns: 18px 40px 1fr 36px 52px; gap: 6px; } .rdetail { padding-left: 4px; } .pbar { display: none; } .rtable th:last-child { font-size: 0; } .rtable th:last-child::after { content: "Points"; font-size: 12.5px; } }
+
+/* Airport codes read like terminal signage: dark plate, light letters, tracked caps. */
+.iata { display: inline-block; background: var(--text); color: var(--panel); font-weight: 700; letter-spacing: .08em; font-size: 12.5px; line-height: 1.5; padding: 0 7px; border-radius: 4px; text-align: center; }
+.iata.inline { background: transparent; color: inherit; padding: 0; font-size: inherit; letter-spacing: .05em; border-radius: 0; }
+.rank .code { justify-self: start; }
+.lead .iata.inline { letter-spacing: .04em; }
+table.cmp th.num, table.cmp td.num { text-align: right; font-variant-numeric: tabular-nums; }
+table.cmp td.hi { font-weight: 700; color: var(--text); }
+table.cmp td:not(:first-child):not(.hi) { color: var(--muted); }
+.rank .num, .rtable .num { font-variant-numeric: tabular-nums; }
+/* One evidence row under each answer */
+.foot { align-items: center; gap: 6px 8px; }
+.echip { font: inherit; font-size: 12.5px; background: transparent; color: var(--muted); border: 1px solid var(--line); border-radius: 999px; padding: 1px 10px; cursor: pointer; }
+.echip:hover { border-color: var(--accent); color: var(--text); }
+.echip[aria-expanded="true"] { background: var(--bg); color: var(--text); }
+.echip.good { color: var(--ok); border-color: var(--ok); }
+.echip.warn { color: var(--warn-text); background: var(--warn-bg); border-color: transparent; }
+.echip:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.foot .meta { margin-left: auto; font-size: 12px; color: var(--muted); }
+.panels { display: grid; gap: 8px; }
+.epanel { margin-top: 8px; padding: 8px 12px; background: var(--bg); border-radius: 8px; font-size: 12.5px; color: var(--muted); overflow-wrap: anywhere; }
+.epanel ul { margin: 0; padding-left: 18px; }
+.epanel ul:has(.st) { padding-left: 0; list-style: none; display: grid; gap: 4px; }
+.epanel li { margin: 2px 0; }
+.epanel li:has(.st) { display: grid; grid-template-columns: auto 1fr; gap: 8px; align-items: baseline; }
+.epanel .st { font-size: 12px; } .epanel .st.ok { color: var(--ok); } .epanel .st.err { color: var(--bad); }
+.epanel code { background: var(--panel); padding: 1px 5px; border-radius: 4px; font-size: 12px; }
+.live { margin-top: 8px; font-size: 13.5px; }
+.live:empty { display: none; }
+button.stop { background: transparent; color: var(--bad); border-color: var(--bad); }
+/* Follow-up suggestions sit outside the answer card, as part of the conversation */
+.followups { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 8px; }
+.fhead { font-size: 12.5px; color: var(--muted); margin-right: 2px; }
+.fchip { font: inherit; font-size: 13px; background: var(--panel); color: var(--text); border: 1px solid var(--line); border-radius: 999px; padding: 4px 12px; text-align: left; cursor: pointer; }
+.fchip:hover { border-color: var(--accent); }
+.fchip:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+@media (max-width: 640px) { .rtable .calc { display: none; } .rtable td:last-child { font-weight: 600; } .foot .meta { margin-left: 0; flex-basis: 100%; } }

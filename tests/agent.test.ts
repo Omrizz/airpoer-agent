@@ -150,3 +150,20 @@ describe("grounding check", () => {
     expect(r.untraced).toEqual(["91.7%"]);
   });
 });
+
+describe("Agent stop", () => {
+  it("rolls history back when a turn is aborted, so the next question still works", async () => {
+    const ctl = new AbortController();
+    const { client } = fakeClient([
+      { stop_reason: "tool_use", content: [toolUse("t1", "get_methodology", {})] },
+      { stop_reason: "end_turn", content: [text("Four components.")] },
+    ]);
+    const agent = new Agent({ client });
+    const events: AgentEvent[] = [];
+    await expect(agent.send("how does it score?", (e) => { events.push(e); if (e.type === "tool_result") ctl.abort(); }, ctl.signal)).rejects.toThrow();
+    expect(agent.messages).toHaveLength(0); // no dangling user message or tool_use block
+    const r = await agent.send("how does it score?");
+    expect(r.text).toBe("Four components.");
+    expect(agent.messages.map((m) => m.role)).toEqual(["user", "assistant"]);
+  });
+});

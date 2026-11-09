@@ -11,6 +11,9 @@ const STATIC: Record<string, { file: string; type: string }> = {
   "/style.css": { file: "style.css", type: "text/css; charset=utf-8" },
   "/app.js": { file: "app.js", type: "text/javascript; charset=utf-8" },
   "/md.js": { file: "md.js", type: "text/javascript; charset=utf-8" },
+  "/fonts/plex-400.woff2": { file: "fonts/ibm-plex-sans-latin-400-normal.woff2", type: "font/woff2" },
+  "/fonts/plex-600.woff2": { file: "fonts/ibm-plex-sans-latin-600-normal.woff2", type: "font/woff2" },
+  "/fonts/plex-700.woff2": { file: "fonts/ibm-plex-sans-latin-700-normal.woff2", type: "font/woff2" },
   "/backdrop.js": { file: "backdrop.js", type: "text/javascript; charset=utf-8" },
 };
 
@@ -131,11 +134,12 @@ export function createApp(opts: AppOptions): http.Server {
 
         res.writeHead(200, { "content-type": "text/event-stream; charset=utf-8", "cache-control": "no-cache, no-transform", connection: "keep-alive", "x-accel-buffering": "no" });
         let open = true;
-        res.on("close", () => { open = false; });
+        const stop = new AbortController();
+        res.on("close", () => { open = false; if (!res.writableFinished) stop.abort(); }); // Stop button or closed tab: stop spending credits
         const send = (ev: Record<string, unknown>) => { if (open) res.write(`data: ${JSON.stringify(ev)}\n\n`); };
 
         try {
-          const r = await session.agent.send(message, (e: AgentEvent) => send(e as unknown as Record<string, unknown>));
+          const r = await session.agent.send(message, (e: AgentEvent) => send(e as unknown as Record<string, unknown>), stop.signal);
           const cost = estimateCost(session.agent.model, r.usage);
           send({
             type: "done",
@@ -148,6 +152,7 @@ export function createApp(opts: AppOptions): http.Server {
             iterations: r.iterations,
           });
         } catch (e) {
+          if (stop.signal.aborted) return;
           const err = e as { apiMessage?: string; status?: number; message?: string };
           const billing = /credit balance/i.test(err.apiMessage ?? err.message ?? "");
           send({
