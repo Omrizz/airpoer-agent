@@ -1,6 +1,7 @@
 import { z } from "zod";
 import { allMetrics } from "../data/db.ts";
 import { AIRPORT_REFERENCE, DEFAULT_HORIZON_YEARS, DEFAULT_SHARE_OF_GROWTH, FINANCE_SOURCES, FORECAST_YEAR, SCENARIOS } from "../finance/config.ts";
+import { FILED_FIGURES } from "../finance/filed.ts";
 import { computeScenario } from "../finance/upside.ts";
 import { err, ok, type ToolResult } from "./envelope.ts";
 
@@ -43,18 +44,26 @@ export async function estimateUpside(input: z.infer<typeof estimateUpsideInput>)
     }, i));
   }
 
+  // Airport's own filed figures replace the generic revenue and cost where we have them.
+  const filed = FILED_FIGURES[airport];
   const ref = AIRPORT_REFERENCE[airport];
-  const ownScenario = ref
-    ? computeScenario({ id: "airport_own_fy2025", label: `${airport} at its own FY2025 revenue and cost`, revenue_per_enplanement: ref.revenue_per_enplanement, opex_per_enplanement: ref.opex_per_enplanement, capex_per_added_enplanement: base.capex_per_added_enplanement, basis: `${airport}'s own FAA CATS FY2025 revenue and cost per enplanement, with the base build cost.` }, i)
+  const own = filed
+    ? { revenue: (filed.revenue_usd_k * 1000) / filed.enplanements, opex: (filed.opex_usd_k * 1000) / filed.enplanements, enplanements: filed.enplanements }
+    : ref ? { revenue: ref.revenue_per_enplanement, opex: ref.opex_per_enplanement, enplanements: ref.enplanements } : null;
+  const ownScenario = own
+    ? computeScenario({ id: "airport_own_fy2025", label: `${airport} at its own FY2025 revenue and cost`, revenue_per_enplanement: own.revenue, opex_per_enplanement: own.opex, capex_per_added_enplanement: base.capex_per_added_enplanement, basis: `${airport}'s own FAA CATS FY2025 revenue and cost per enplanement (cost before depreciation), with the base build cost, which is not airport-specific.` }, i)
     : null;
+  const figuresUsed = ownScenario ? "airport_filed" : "benchmark";
 
   return ok(
     {
       airport,
       name: me.name,
       forecast: { enplanements_2025: Math.round(a), enplanements_2035: Math.round(b), added_enplanements_by_2035: Math.round(added), share_of_growth_counted: share, forecast_year: FORECAST_YEAR },
+      revenue_and_cost_source: figuresUsed,
+      source_note: ownScenario ? `Headline scenario uses ${airport}'s own filed FY2025 revenue and cost per passenger; the optimistic, base and conservative scenarios are generic benchmarks for comparison.` : `No filed figures for ${airport} were loaded, so only generic benchmark scenarios are shown.`,
       scenarios,
-      airport_own_figures: ref && ownScenario ? { fy2025_cats: ref, scenario: ownScenario } : null,
+      airport_own_figures: own && ownScenario ? { fy2025_cats: { revenue_per_enplanement: Math.round(own.revenue * 100) / 100, opex_per_enplanement: Math.round(own.opex * 100) / 100, enplanements: own.enplanements }, scenario: ownScenario } : null,
       reading_guide: "Payback is capital cost divided by added annual operating profit (before depreciation and debt service) at the 2035 run rate. Breakeven build cost is the most the project could cost per added annual enplanement and still be repaid by operating profit within the horizon; compare it with each scenario's build cost.",
     },
     {
@@ -67,6 +76,7 @@ export async function estimateUpside(input: z.infer<typeof estimateUpsideInput>)
       caveats: [
         "These scenarios are identical for every airport except for the number of added passengers, so the payback years do not rank airports; the dollar upside scales with forecast growth. Use the investment score to rank.",
         "Revenue per passenger varies widely between airports (FY2025 FAA CATS: $13.82 at Atlanta to $64.40 at JFK), so any generic figure can be far off for one airport.",
+        "Filed figures are one fiscal year of airport-wide averages; revenue and cost on added passengers can differ, and large hubs include non-passenger income such as parking and cargo. Where an airport already loses money before depreciation, expansion at its current economics does not pay back.",
         "Build-cost anchors are two large-hub megaprojects from 2022-23. Costs at small airports, or for renovations rather than new terminals, can be very different.",
         "Counting all forecast growth as dependent on the project is an upper bound; if the existing terminal can absorb part of it, lower the share.",
         "Airline rates at many airports are set to recover capital costs, so a project's revenue can partly reflect cost recovery rather than profit.",

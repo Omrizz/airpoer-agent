@@ -21,7 +21,9 @@ For one airport:
 - **Build cost** uses two recent large-hub projects: [Orlando Terminal C](https://canada.constructconnect.com/dcn/news/usa/2022/10/2-8-billion-terminal-c-opens-at-orlando-international-airport/embed) ($2.8B, adds 10-12M passengers a year) and [Newark Terminal A](https://constructiondive.com/news/newark-airport-unveils-27b-terminal-a-airtrain-project-still-delayed/641063) ($2.7B, capacity above 13M a year, replacing a 9M-a-year terminal). Two annual passengers are counted as one enplanement.
 - The optimistic, base and conservative columns are *combinations* chosen to span a plausible range; they are not forecasts, and no source says these combinations occur together.
 
-For six airports we also hold their own FY2025 CATS figures (ATL, BOS, LAX, JFK, PWM, SNA), shown as a reference and as an extra scenario at their own revenue and cost.
+For 18 airports we hold their own FY2025 CATS figures: the top 15 of the national ranking plus New England BDL and BTV, and ATL, BOS, LAX, JFK, PWM, SNA from earlier. Where they exist, `estimate_upside` adds a headline scenario at the airport's own revenue and operating cost (before depreciation, line 6.7), sets `revenue_and_cost_source` to `airport_filed`, and the answer must say so. Other airports get only the generic scenarios (`benchmark`). Build cost is a benchmark in both cases, because filings show what was spent, not what new capacity costs.
+
+The 12 newest airports are in `snapshot/airport_finance_fy2025.csv` (also `src/finance/filed.ts`). They come from DWU's copy of the filed forms; EWR, BTV and FLL were checked line by line against cats.airports.faa.gov and matched. SFB, PIE and BGR have no DWU page and stay on the benchmark.
 
 ## Reading the results honestly
 - **Payback years are the same for every airport** under a given scenario, because the assumptions are per passenger. Only the dollar size differs, with forecast growth. The tool says so, and the investment score remains the ranking.
@@ -32,4 +34,4 @@ For six airports we also hold their own FY2025 CATS figures (ATL, BOS, LAX, JFK,
 - Not modelled: ramp-up, discounting, inflation, financing, taxes, concession terms, and the possibility that marginal revenue per added passenger differs from the average.
 
 ## Not yet done (next phase)
-Per-airport CATS revenue and cost for every scored airport. The FAA site shows one airport at a time and offers no bulk export; the DWU airport pages above could be used to fill more airports, which would replace the generic scenarios where available.
+Per-airport CATS revenue and cost for the rest of the scored airports (done for the shortlist; the FAA site has no bulk export). Remaining spot-checks: 9 of the 12 newest airports are not independently checked.
