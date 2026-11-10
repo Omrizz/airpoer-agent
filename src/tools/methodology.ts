@@ -23,7 +23,8 @@ export async function methodology(): Promise<ToolResult<unknown>> {
       },
       confidence: "high = no issues, medium = one, low = two or more.",
       sensitivity: "Rankings are re-run with each component weight scaled by 0.8 and 1.2 to show whether the top airports hold.",
-      not_modelled: ["Construction cost or financial return", "Runway, airspace or gate capacity", "Local politics, land, environmental limits", "Fares and yield"],
+      financial_layer: "Separate from the score: the estimate_upside tool gives illustrative revenue, operating profit, build cost and payback scenarios from stated assumptions. It is not part of the score and does not change any ranking.",
+      not_modelled: ["Airport-specific construction cost or financial return (only generic, stated scenarios exist, outside the score)", "Runway, airspace or gate capacity", "Local politics, land, environmental limits", "Fares and yield"],
     },
     { sources: [SOURCES.t100, SOURCES.otp, SOURCES.taf] },
   );

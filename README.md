@@ -4,7 +4,7 @@ An AI agent that helps analysts screen US airports for terminal-expansion potent
 
 **How AI is used:** Claude picks tools, interprets questions, and explains results. **All numbers come from deterministic code** (scoring, ranking, shares, comparisons), and a grounding check flags any figure in an answer that does not trace back to tool output.
 
-Design docs: **[Design overview](docs/DESIGN.md)** · [Scoring methodology](docs/SCORING.md) · [Tool contract and agent](docs/TOOLS.md) · [Data check](DATA_CHECK.md)
+Design docs: **[Design overview](docs/DESIGN.md)** · [Scoring methodology](docs/SCORING.md) · [Financial scenarios](docs/FINANCE.md) · [Tool contract and agent](docs/TOOLS.md) · [Data check](DATA_CHECK.md)
 
 ## Run it
 
@@ -23,7 +23,7 @@ Other commands:
 | `npm run chat` | Terminal chat |
 | `npm run web:demo` | UI with **scripted** answers built from the real tools (no API key or credits needed; clearly labelled) |
 | `npm run eval` | Runs the sample questions, follow-ups and a boundary probe against the live model and writes `docs/EVAL.md` (spends API tokens) |
-| `npm test` | 76 tests: scoring, tools against real data, agent loop (scripted fake model), server, markdown renderer |
+| `npm test` | 89 tests: scoring, tools against real data, agent loop (scripted fake model), server, markdown renderer |
 | `npm run build-metrics` | Rebuilds `airport_metrics` from the downloaded data |
 | `npm run live-sample` | Saves the live FAA NAS Status feed to `samples/` and lists airports with active programs (to capture a real fixture) |
 | `npm run export-snapshot` | Writes the tables the agent reads to `snapshot/*.parquet` |
@@ -45,7 +45,8 @@ See [DATA_CHECK.md](DATA_CHECK.md) for sources, quirks and checks.
 ## Layout
 ```
 src/scoring/   deterministic score, percentile ranking, sensitivity
-src/tools/     six tools the agent can call (zod-validated, uniform result envelope)
+src/finance/   financial scenario assumptions and arithmetic (separate from the score)
+src/tools/     eight tools the agent can call (zod-validated, uniform result envelope)
 src/agent/     system prompt, tool loop, grounding check, cost estimate
 src/data/      DuckDB access, region/window helpers, snapshot loader
 src/server/    dependency-free HTTP + SSE server (localhost only)
@@ -59,5 +60,5 @@ The landing screen shows particles flying the 160 busiest routes between the 60 
 
 ## Limits (read before trusting a ranking)
 - Congestion uses 6 alternating months of on-time data (Jul, Sep, Nov 2025; Jan, Mar, May 2026), so all seasons are represented but not every month, and it covers large reporting carriers only.
-- Scores screen for demand pressure; they do not model cost, returns, or whether the terminal is the binding constraint.
+- Scores screen for demand pressure; they do not model cost, returns, or whether the terminal is the binding constraint. Dollar figures come only from the separate `estimate_upside` scenarios (stated assumptions, not part of the score).
 - "Unmet demand" is not directly measurable; the agent reports proxies.
