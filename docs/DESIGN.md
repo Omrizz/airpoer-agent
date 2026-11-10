@@ -69,4 +69,4 @@ Question answered: *where would extra terminal capacity be absorbed by demand th
 - `live_status` depends on an external service and fails softly; the agent then says live status is unavailable.
 
 ## Verification
-89 tests (scoring, tools against the real snapshot, finance arithmetic and tool, agent loop with a scripted fake model, server, live-status parser with a fixture). `npm run eval` runs the sample questions, follow-ups and an out-of-scope probe against the live model; results are in [EVAL.md](EVAL.md) (recorded before the 6-month on-time rebuild, so its figures are older than the current data).
+97 tests (scoring, tools against the real snapshot, finance arithmetic and tool, agent loop with a scripted fake model, server, live-status parser with a fixture). `npm run eval` runs the sample questions, follow-ups and an out-of-scope probe against the live model; results are in [EVAL.md](EVAL.md) (recorded before the 6-month on-time rebuild, so its figures are older than the current data).

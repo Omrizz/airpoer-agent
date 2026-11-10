@@ -51,6 +51,26 @@ describe("estimate_upside tool", () => {
     expect((await call({ airport: "BOS" })).json.data.airport_own_figures.fy2025_cats.revenue_per_enplanement).toBe(48.69);
     expect((await call({ airport: "BGR" })).json.data.airport_own_figures).toBeNull();
   });
+  it("uses filed figures for shortlist airports and says which source it used", async () => {
+    const ewr = (await call({ airport: "EWR" })).json.data;
+    expect(ewr.revenue_and_cost_source).toBe("airport_filed");
+    expect(ewr.airport_own_figures.fy2025_cats.revenue_per_enplanement).toBe(60.4);
+    expect(ewr.airport_own_figures.fy2025_cats.opex_per_enplanement).toBe(34.9);
+    expect(ewr.airport_own_figures.scenario.revenue_per_enplanement).toBe(60.4);
+    expect((await call({ airport: "BGR" })).json.data.revenue_and_cost_source).toBe("benchmark");
+  });
+  it("shows a loss-making airport as having no payback", async () => {
+    const btv = (await call({ airport: "BTV" })).json.data;
+    expect(btv.airport_own_figures.scenario.operating_profit_per_enplanement).toBeLessThan(0);
+    expect(btv.airport_own_figures.scenario.simple_payback_years).toBeNull();
+  });
+  it("filed figures match the committed CSV", async () => {
+    const { readFileSync } = await import("node:fs");
+    const { FILED_FIGURES } = await import("../src/finance/filed.ts");
+    const rows = readFileSync("snapshot/airport_finance_fy2025.csv", "utf8").trim().split("\n").slice(1).map((l) => l.split(","));
+    expect(rows.length).toBe(Object.keys(FILED_FIGURES).length);
+    for (const r of rows) expect(FILED_FIGURES[r[0]!]).toMatchObject({ enplanements: +r[3]!, revenue_usd_k: +r[4]!, opex_usd_k: +r[5]! });
+  });
   it("adds a custom scenario using the user's values and base for the rest", async () => {
     const r = await call({ airport: "BGR", custom: { revenue_per_enplanement: 40 } });
     const c = r.json.data.scenarios.find((s: any) => s.id === "custom");

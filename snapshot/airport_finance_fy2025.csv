@@ -1,0 +1,13 @@
+iata,fiscal_year,fy_end,enplanements,operating_revenue_usd_k,opex_ex_depr_usd_k,pax_airline_aero_rev_usd_k,source_url,retrieved
+MCO,2025,Sep,28357361,838312,530226,356168,https://dwuconsulting.com/airports/mco,2026-11-10
+SFO,2025,Jun,26965912,1369248,731745,758116,https://dwuconsulting.com/airports/sfo,2026-11-10
+ORD,2025,Dec,42317469,1721650,1079611,1262611,https://dwuconsulting.com/airports/ord,2026-11-10
+EWR,2025,Dec,23612851,1426263,824206,834745,https://dwuconsulting.com/airports/ewr,2026-11-10
+SEA,2025,Dec,26316731,908522,537028,501609,https://dwuconsulting.com/airports/sea,2026-11-10
+DEN,2025,Dec,41199036,1317142,718563,651087,https://dwuconsulting.com/airports/den,2026-11-10
+PDX,2025,Jun,9049066,400624,204584,214296,https://dwuconsulting.com/airports/pdx,2026-11-10
+MIA,2025,Sep,27717251,1000096,777516,488310,https://dwuconsulting.com/airports/mia,2026-11-10
+FLL,2025,Sep,16224254,385604,292278,153705,https://dwuconsulting.com/airports/fll,2026-11-10
+RSW,2025,Sep,5526505,167028,108208,72096,https://dwuconsulting.com/airports/rsw,2026-11-10
+BDL,2025,Jun,3378637,113066,86188,25763,https://dwuconsulting.com/airports/bdl,2026-11-10
+BTV,2025,Jun,719870,23681,24023,4930,https://dwuconsulting.com/airports/btv,2026-11-10
