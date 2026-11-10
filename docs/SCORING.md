@@ -46,7 +46,7 @@ Confidence = high (0 issues), medium (1), low (2+). The editorial flag does not 
 - Leisure-heavy secondary airports with ultra-low-cost carriers (SFB, PIE) score high on load factor and growth; this reflects the data, and may overstate terminal need.
 - The forecast is the FAA's, not ours, and FAA forecasts are known to be smooth.
 - Weights are judgement calls. They are not fitted to outcomes (there is no ground truth of "profitable renovation").
-- Scores are relative within today's US peer set; they say nothing about absolute return.
+- Scores are relative within today's US peer set; they say nothing about absolute return. Illustrative dollar scenarios exist separately (`estimate_upside`, see [FINANCE.md](FINANCE.md)) and are not part of the score.
 
 ## Reproduce
 ```

@@ -25,7 +25,7 @@ const money = (v) => (v == null ? null : v < 0.01 ? "<$0.01" : `$${v.toFixed(2)}
 const fmtArgs = (o) => Object.entries(o ?? {}).filter(([, v]) => v !== undefined).map(([k, v]) => `${k}=${JSON.stringify(v)}`).join(", ");
 const TOOL_LABEL = {
   resolve_airports: "Looking up airports", rank_airports: "Ranking airports", compare_airports: "Comparing airports",
-  route_mix: "Checking route mix", demand_gap: "Estimating the demand gap", live_status: "Checking live FAA status", get_methodology: "Reading the scoring method",
+  route_mix: "Checking route mix", demand_gap: "Estimating the demand gap", estimate_upside: "Estimating dollar scenarios", live_status: "Checking live FAA status", get_methodology: "Reading the scoring method",
 };
 const COMP = { demand_pressure: "Demand pressure", congestion: "Congestion", growth: "Growth outlook", scale: "Size of prize" };
 

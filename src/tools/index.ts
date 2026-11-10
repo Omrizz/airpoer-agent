@@ -2,6 +2,7 @@ import { z } from "zod";
 import { compareAirports, compareInput } from "./compare.ts";
 import { demandGap, demandGapInput } from "./demandGap.ts";
 import { err, type ToolResult } from "./envelope.ts";
+import { estimateUpside, estimateUpsideInput } from "./estimateUpside.ts";
 import { liveStatus, liveStatusInput } from "./liveStatus.ts";
 import { methodology, methodologyInput } from "./methodology.ts";
 import { rankAirports, rankInput } from "./rank.ts";
@@ -49,6 +50,12 @@ export const TOOLS: ToolDef[] = [
     "Evidence about unmet or constrained demand at one airport: monthly load factors, months above a 'full' threshold, a seat-shortfall proxy, demand-vs-seat growth, ground congestion, and nearby alternatives that may absorb spill. Unmet demand is NOT directly measurable; this tool returns proxies and a list of what cannot be measured. Use for 'what is the unmet demand at X and why'.",
     demandGapInput,
     demandGap,
+  ),
+  def(
+    "estimate_upside",
+    "Illustrative financial scenarios (optimistic, base, conservative) for one airport: added annual revenue and operating profit from the FAA-forecast passenger growth, an assumed build cost, simple payback and the breakeven build cost. Use when the user asks what an expansion could be worth in dollars or whether it could pay back. It rests on stated assumptions (national or peer revenue per passenger, two reference terminal projects), is NOT part of the investment score, and must be presented as an assumption-driven estimate with its caveats. The user's own assumptions can be passed in `custom`.",
+    estimateUpsideInput,
+    estimateUpside,
   ),
   def(
     "live_status",

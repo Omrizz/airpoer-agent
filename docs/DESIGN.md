@@ -12,6 +12,7 @@ HTTP server (localhost) --> Agent loop (Claude, tool use, in-memory history)
                                |-- compare_airports   X vs Y on scale, demand, congestion
                                |-- route_mix          long-haul share, distance bands, passenger vs cargo
                                |-- demand_gap         unmet-demand proxies, nearby alternatives
+                               |-- estimate_upside    illustrative dollar scenarios (outside the score)
                                |-- live_status        FAA NAS Status (live API call)
                                `-- get_methodology
                                          |
@@ -28,6 +29,7 @@ Every tool returns one envelope: `{ data, assumptions, caveats, data_as_of, sour
 | Resolves ambiguity ("LA" -> LAX, stated aloud) | Region expansion (New England -> CT, ME, MA, NH, RI, VT), airport lookup |
 | Chains tools and reuses results for follow-ups | Weight changes ("weight growth more" becomes a `weights` argument), sensitivity runs |
 | Writes the explanation and states assumptions | Missing-data handling, confidence and flags |
+| Explains the financial scenarios and their caveats | Revenue, operating profit, build cost and payback arithmetic |
 
 Guardrail in code: a **grounding check** compares each figure in the answer with the numbers in the tool outputs and reports any it cannot trace. It finds invented numbers; it cannot tell whether a traced number is used correctly (we found one such error by reading answers, see MODEL_CHOICE.md).
 
@@ -55,15 +57,16 @@ Question answered: *where would extra terminal capacity be absorbed by demand th
 3. **Transparent weights over fitted weights.** There is no ground truth for "profitable renovation", so fitting would be false precision. Weights are judgement calls, shown and changeable, and the sensitivity check tests whether the answer depends on them.
 4. **Proxies, stated as proxies.** Taxi-out and delay stand in for congestion; load factor and spill stand in for unmet demand. The agent must say so and must not give one confident "unmet demand" number.
 5. **Hand-rolled tool loop over the SDK tool runner.** The UI needs per-tool events (call, result, latency) and full control of history.
-6. **Model choice by measurement.** Sonnet 5.5 is the default: correct on every checked item at about half the cost of Opus. Haiku passed the automatic checks but made errors only reading found, so it is not used for answers.
+6. **Dollars as separate scenarios, not part of the score.** "Profitable" needs money, but there is no per-airport revenue data we can load in bulk and no ground truth for returns. `estimate_upside` therefore gives optimistic, base and conservative scenarios from cited FAA CATS figures and two reference terminal projects, with every assumption visible and changeable. It never feeds the score, and its payback years are identical across airports by construction, so it adds the size of the prize in dollars, not a second ranking. Details in [FINANCE.md](FINANCE.md).
+7. **Model choice by measurement.** Sonnet 5.5 is the default: correct on every checked item at about half the cost of Opus. Haiku passed the automatic checks but made errors only reading found, so it is not used for answers.
 
 ## Assumptions, uncertainty and scope (what the agent must say)
 - Data window: T-100 through the latest loaded month (12-month window); FAA TAF 2025 edition. Each answer names its period from `data_as_of`.
 - **Congestion rests on 6 alternating months of on-time data** (Jul, Sep, Nov 2025; Jan, Mar, May 2026: all seasons, not every month) and on large reporting carriers only (about 50% of ANC and 73-76% of BOS/LAX/SFO passenger departures). Airports with fewer than 6 months of on-time data carry the `single_season_otp` flag.
 - Scores screen for demand pressure. They do not model construction cost, returns, gate or runway capacity, or whether the terminal is the binding constraint.
 - Leisure-heavy secondary airports (e.g. SFB, PIE) score high on load factor and growth and may overstate terminal need.
-- FAA forecasts are smooth and are the FAA's, not ours. Not used: FAA CATS revenue per passenger (the FAA publishes it only one airport at a time, with no bulk export, so it was not collected), DB1B fares and Census growth; these would add a dollar estimate and a fare-based unmet-demand signal. As a result, "size of prize" is measured in forecast enplanements, not dollars.
+- FAA forecasts are smooth and are the FAA's, not ours. Dollars: FAA CATS revenue per passenger has no bulk export (one airport at a time), so the score's "size of prize" stays in forecast enplanements. Dollars come from the separate `estimate_upside` scenarios, which use national and a few airport figures and so are generic (see FINANCE.md). Not used: DB1B fares and Census growth, which would add a fare-based unmet-demand signal and a demand driver.
 - `live_status` depends on an external service and fails softly; the agent then says live status is unavailable.
 
 ## Verification
-75 tests (scoring, tools against the real snapshot, agent loop with a scripted fake model, server, live-status parser with a fixture). `npm run eval` runs the sample questions, follow-ups and an out-of-scope probe against the live model; results are in [EVAL.md](EVAL.md) (recorded before the 6-month on-time rebuild, so its figures are older than the current data).
+89 tests (scoring, tools against the real snapshot, finance arithmetic and tool, agent loop with a scripted fake model, server, live-status parser with a fixture). `npm run eval` runs the sample questions, follow-ups and an out-of-scope probe against the live model; results are in [EVAL.md](EVAL.md) (recorded before the 6-month on-time rebuild, so its figures are older than the current data).
