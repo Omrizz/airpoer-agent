@@ -45,7 +45,7 @@ Validation: inputs are checked with Zod; IATA codes are regex-validated before t
 
 ## Guardrails that are code, not prompts
 1. Scoring, ranking, shares and comparisons are computed in tools.
-2. **Grounding check** (`grounding.ts`): after each answer, every figure is matched against numbers in the conversation's tool outputs; untraced figures are reported to the UI/eval. Derived numbers (ratios) are expected to show as untraced unless the model labels them derived.
+2. **Grounding check** (`grounding.ts`): after each answer, every figure is matched against numbers in the conversation's tool outputs; untraced figures are reported to the UI/eval. Derived numbers (ratios) are expected to show as untraced unless the model labels them derived. Figures are matched allowing for the rounding shown ("2.9B" covers 2.85B-2.95B) and for unit changes: tool fields named `*_usd_m` or `*_usd_b` are in US$ millions or billions, so "$126M" traces to `126.3`. Tools that report money in other units must follow this naming.
 3. Tool result size cap and input validation.
 
 ## Known limits

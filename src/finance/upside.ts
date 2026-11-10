@@ -25,6 +25,7 @@ export interface ScenarioResult {
   basis?: string;
 }
 
+// Money fields are named *_usd_m (US$ millions); the grounding check relies on that suffix to trace "$126M" or "$1.4B" in answers.
 const m = (usd: number) => Math.round(usd / 1e5) / 10; // $ -> $ millions, 1 decimal
 const r2 = (v: number) => Math.round(v * 100) / 100;
 
