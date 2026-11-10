@@ -149,6 +149,34 @@ describe("grounding check", () => {
     const r = checkGrounding("The load factor was 91.7% and 26.5M people flew.", [tool]);
     expect(r.untraced).toEqual(["91.7%"]);
   });
+
+  describe("dollar fields reported in millions (*_usd_m)", () => {
+    const money = JSON.stringify({ ok: true, data: { scenarios: [
+      { added_annual_revenue_usd_m: 126.3, added_annual_operating_profit_usd_m: 65.8, capex_usd_m: 1431.4 },
+      { added_annual_revenue_usd_m: 192.4, capex_usd_m: 2862.2 },
+    ] } });
+    it("traces rounded dollar figures and million-to-billion conversions", () => {
+      const r = checkGrounding("It adds $126M of revenue and $66M of profit on a $1.43B build, or about $1.4B; the base case is $2.9B and $192M.", [money]);
+      expect(r.untraced).toEqual([]);
+    });
+    it("still flags derived or invented dollar figures", () => {
+      const r = checkGrounding("Profit would be $131M, or $500M, over 43 years.", [money]);
+      expect(r.untraced).toEqual(["131M", "500M", "43"]);
+    });
+    it("does not accept a figure that rounds differently from the tool value", () => {
+      const r = checkGrounding("Revenue is $130M and the build costs $1.5B.", [money]);
+      expect(r.untraced).toEqual(["130M", "1.5B"]);
+    });
+    it("accepts a whole-number rounding of a one-decimal value, but not a different number", () => {
+      const t = JSON.stringify({ ok: true, data: { simple_payback_years: 153.1, other: 40 } });
+      expect(checkGrounding("Payback is 153 years.", [t]).untraced).toEqual([]);
+      expect(checkGrounding("Payback is 150 years.", [t]).untraced).toEqual(["150"]);
+    });
+    it("only scales fields named *_usd_m, so other numbers are not inflated", () => {
+      const t = JSON.stringify({ ok: true, data: { load_factor_pct: 82.3 } });
+      expect(checkGrounding("It was $82M.", [t]).untraced).toEqual(["82M"]);
+    });
+  });
 });
 
 describe("Agent stop", () => {
