@@ -1,0 +1,110 @@
+<!doctype html>
+<!--
+  Source for docs/RUN_GUIDE.pdf (a two-page "how to run it" guide for first-time users).
+  To regenerate the PDF: open this file in Chrome or Edge, Print, "Save as PDF", A4 or Letter, margins Default,
+  "Background graphics" on. The committed PDF was rendered with headless Chromium (Playwright page.pdf, format A4).
+-->
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Airport Agent: Run Guide</title>
+<style>
+  @page { size: A4; margin: 12mm 14mm 12mm 14mm; }
+  :root { --ink: #1b2430; --muted: #5a6573; --accent: #0b5cad; --line: #d9dee5; --code-bg: #f3f5f8; }
+  * { box-sizing: border-box; }
+  body { font-family: "Segoe UI", "Helvetica Neue", Arial, sans-serif; color: var(--ink); font-size: 9.6pt; line-height: 1.38; margin: 0; background: #fff; }
+  h1 { font-size: 19pt; margin: 0 0 2pt; color: var(--accent); letter-spacing: -0.2pt; }
+  .sub { color: var(--muted); margin: 0 0 9pt; font-size: 10pt; }
+  h2 { font-size: 11.5pt; margin: 9pt 0 3pt; break-after: avoid; padding-bottom: 2pt; border-bottom: 1.2pt solid var(--line); }
+  h2 .n { display: inline-block; width: 15pt; height: 15pt; border-radius: 50%; background: var(--accent); color: #fff; text-align: center; font-size: 9pt; line-height: 15pt; margin-right: 5pt; vertical-align: 1pt; }
+  p { margin: 3pt 0 5pt; }
+  ul, ol { margin: 3pt 0 6pt; padding-left: 15pt; }
+  li { margin: 1.5pt 0; }
+  code { font-family: Consolas, "SFMono-Regular", Menlo, monospace; font-size: 9pt; background: var(--code-bg); padding: 0.5pt 3pt; border-radius: 2pt; }
+  pre { font-family: Consolas, "SFMono-Regular", Menlo, monospace; font-size: 9pt; background: var(--code-bg); border-left: 3pt solid var(--accent); padding: 5pt 8pt; margin: 4pt 0 6pt; white-space: pre-wrap; line-height: 1.45; }
+  pre .c { color: var(--muted); }
+  table { border-collapse: collapse; width: 100%; margin: 4pt 0 6pt; font-size: 9.3pt; }
+  th, td { text-align: left; vertical-align: top; padding: 3.5pt 6pt; border-bottom: 0.8pt solid var(--line); }
+  th { background: var(--code-bg); font-weight: 600; }
+  td:first-child { white-space: nowrap; width: 34%; } td:last-child { width: 9%; }
+  tr, .box, pre { break-inside: avoid; }
+  .box { border: 1pt solid var(--line); border-radius: 4pt; padding: 6pt 9pt; margin: 6pt 0; background: #fafbfc; }
+  .box.tip { border-left: 3pt solid #2e8b57; }
+  .box.warn { border-left: 3pt solid #c77700; }
+  .box b:first-child { margin-right: 3pt; }
+  .q { margin: 2pt 0; }
+  .q em { color: var(--muted); font-style: normal; font-size: 9pt; }
+  .page-break { break-before: page; }
+  .foot { color: var(--muted); font-size: 8.5pt; margin-top: 10pt; border-top: 0.8pt solid var(--line); padding-top: 4pt; }
+</style>
+</head>
+<body>
+
+<h1>Airport Investment Intelligence Agent</h1>
+<p class="sub">Run guide for first-time users: from a fresh clone to your first answer in about five minutes.</p>
+
+<p>The agent answers analyst questions about where US airports need more terminal capacity. Claude chooses the tools and writes the explanation; <b>every number comes from deterministic code</b> over public BTS and FAA data, and a grounding check flags any figure in an answer that does not trace back to tool output.</p>
+
+<h2><span class="n">1</span>What you need</h2>
+<ul>
+  <li><b>Node.js 22 or newer</b> (check with <code>node -v</code>). The project runs TypeScript files directly, so there is no build step. If you are on an early 22.x release and see a "Unknown file extension .ts" error, update Node.</li>
+  <li><b>Git</b>, to clone the repository.</li>
+  <li><b>An Anthropic API key</b> for the real agent. Not needed for the demo in step 3.</li>
+  <li>No data download: the processed data ships with the repo (<code>snapshot/*.parquet</code>, about 22 MB). On first start the app builds its local database <code>data/airports.duckdb</code> from it automatically.</li>
+</ul>
+
+<h2><span class="n">2</span>Install</h2>
+<pre>git clone https://github.com/Omrizz/airpoer-agent.git
+cd airpoer-agent
+npm install</pre>
+
+<h2><span class="n">3</span>Try it without an API key (demo mode)</h2>
+<pre>npm run web:demo</pre>
+<p>Open <b>http://localhost:3000</b>. A banner says <i>DEMO MODE</i>: answers are scripted from the real tools and real data, with no language model involved. Only the four example questions on the welcome screen work in this mode. It is the quickest way to see the UI, the tool trace and the score charts.</p>
+
+<h2><span class="n">4</span>Run the real agent</h2>
+<p>Create a <code>.env</code> file from the template and paste your key into it:</p>
+<pre><span class="c"># macOS / Linux / Git Bash / PowerShell</span>
+cp .env.example .env
+<span class="c"># Windows Command Prompt</span>
+copy .env.example .env</pre>
+<p>Edit <code>.env</code> so it reads <code>ANTHROPIC_API_KEY=sk-ant-...</code>, then start the web UI:</p>
+<pre>npm run web</pre>
+<p>Open <b>http://localhost:3000</b> and ask a question. Each answer shows the tools the agent called, the data behind the numbers, and a note if any figure could not be traced to tool output. Stop the server with <code>Ctrl+C</code>.</p>
+
+<div class="box warn"><b>If it does not start:</b> "<code>.env: not found</code>" means the <code>.env</code> file is missing (step 4). A banner saying "Chat is disabled: no ANTHROPIC_API_KEY found" means the file exists but the key line is empty. Port 3000 busy? Set another one, for example <code>PORT=3001 npm run web</code> (PowerShell: <code>$env:PORT=3001; npm run web</code>).</div>
+
+<div class="box tip"><b>Optional settings in .env:</b> the default model is <code>claude-sonnet-5-5</code>. Set <code>ANTHROPIC_MODEL=claude-opus-5-5</code> for the most thorough answers (about twice the cost), or <code>ANTHROPIC_EFFORT=low|medium|high</code>. See <code>docs/MODEL_CHOICE.md</code>.</div>
+
+<h2 class="page-break"><span class="n">5</span>Questions to try</h2>
+<p class="q"><b>Which airports in New England are strong candidates for terminal expansion?</b> <em>(ranking with score breakdown; then try the follow-ups "Why is Portland ranked above Bangor?" and "What changes if we care much more about growth than congestion?")</em></p>
+<p class="q"><b>Compare LA and Santa Ana airport congestion levels.</b> <em>(side-by-side delays and taxi times, LAX vs SNA)</em></p>
+<p class="q"><b>What is the unmet flight demand in SFO airport and why?</b> <em>(demand-gap proxies, since unmet demand cannot be measured directly)</em></p>
+<p class="q"><b>What is the percentage of long haul flights out of Anchorage airport?</b> <em>(route mix by distance)</em></p>
+<p class="q"><b>What's an expansion at Newark worth?</b> <em>(dollar scenarios built on Newark's filed FY2025 revenue and costs; kept separate from the score, with every assumption stated)</em></p>
+<p class="q"><b>How do you score airports?</b> <em>(the agent explains the 10 KPIs and four weighted components)</em></p>
+<p>The first four also work in demo mode. The rest need the real agent.</p>
+
+<h2><span class="n">6</span>Other commands</h2>
+<table>
+  <tr><th>Command</th><th>What it does</th><th>API key?</th></tr>
+  <tr><td><code>npm run chat</code></td><td>Same agent in the terminal. Type a question; <code>/reset</code> starts over, <code>/exit</code> quits.</td><td>Yes</td></tr>
+  <tr><td><code>npm run eval</code></td><td>Runs the exam's sample questions, follow-ups and a boundary probe against the live model, checks the answers and rewrites <code>docs/EVAL.md</code>. Spends a small amount of API credit.</td><td>Yes</td></tr>
+  <tr><td><code>npm test</code></td><td>97 automated tests: scoring, tools on the real data, the agent loop with a scripted model, the server.</td><td>No</td></tr>
+  <tr><td><code>npm run score -- --region NE --top 5</code></td><td>Prints the deterministic ranking straight from the scoring code, no AI involved. Add <code>--detail BOS,PWM</code> for KPI detail.</td><td>No</td></tr>
+  <tr><td><code>npm run live-sample</code></td><td>Saves the live FAA NAS Status feed to <code>samples/</code> and lists airports with active delay programs. Needs internet access to nasstatus.faa.gov.</td><td>No</td></tr>
+</table>
+
+<h2><span class="n">7</span>Where to read more</h2>
+<ul>
+  <li><code>docs/DESIGN.md</code>: design overview, how each exam requirement is met, KPI table.</li>
+  <li><code>docs/SCORING.md</code>: KPI definitions, weights, percentile scoring and sensitivity.</li>
+  <li><code>docs/FINANCE.md</code>: the dollar scenarios and their assumptions.</li>
+  <li><code>docs/TOOLS.md</code>: the tools the agent can call. <code>DATA_CHECK.md</code>: data sources and checks.</li>
+</ul>
+
+<div class="box"><b>Read before trusting a ranking:</b> scores screen for demand pressure; they do not model construction cost, returns, or whether the terminal is the binding constraint. Congestion uses six alternating months of on-time data from large reporting carriers. "Unmet demand" is reported through proxies because it cannot be measured directly.</div>
+
+<p class="foot">Airport Investment Intelligence Agent · run guide · source: docs/RUN_GUIDE.html</p>
+</body>
+</html>
