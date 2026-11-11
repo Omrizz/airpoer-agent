@@ -8,6 +8,8 @@ Design docs: **[Design overview](docs/DESIGN.md)** · [Scoring methodology](docs
 
 ## Run it
 
+First time? The two-page [run guide (PDF)](docs/RUN_GUIDE.pdf) walks through setup, demo mode and questions to try.
+
 Requires Node 22+ (developed on Node 26).
 
 ```bash
