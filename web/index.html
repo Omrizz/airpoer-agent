@@ -8,13 +8,18 @@
 </head>
 <body>
   <header>
-    <div>
-      <h1>Airport Investment Intelligence</h1>
-      <p class="sub">Screens US airports for terminal-expansion potential from public aviation data. Scores are deterministic; the AI chooses tools and explains.</p>
-    </div>
-    <div class="actions">
-      <label class="toggle" id="speakWrap" hidden><input type="checkbox" id="speak"> Read answers aloud</label>
-      <button type="button" id="newchat" class="ghost">New chat</button>
+    <div class="hbar">
+      <div class="brand">
+        <span class="mark" aria-hidden="true"><svg viewBox="0 0 24 24" width="20" height="20"><path fill="currentColor" d="M12 2c.8 0 1.3.7 1.3 1.6V9l7.7 4.5v2l-7.7-2.3v4.6l2.2 1.7V21L12 20l-3.5 1v-1.5l2.2-1.7v-4.6L3 15.5v-2L10.7 9V3.6C10.7 2.7 11.2 2 12 2z" transform="rotate(45 12 12)"/></svg></span>
+        <div class="btext">
+          <h1>Airport Investment Intelligence</h1>
+          <p class="sub">Ranks US airports for terminal-expansion potential <span class="dot" aria-hidden="true">·</span> <span class="nowrap">deterministic scores, AI explains</span></p>
+        </div>
+      </div>
+      <div class="actions">
+        <label class="switch" id="speakWrap" hidden><input type="checkbox" role="switch" id="speak"><span class="slabel">Read aloud</span></label>
+        <button type="button" id="newchat" class="ghost newchat"><svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true"><path d="M8 3v10M3 8h10" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>New chat</button>
+      </div>
     </div>
   </header>
 

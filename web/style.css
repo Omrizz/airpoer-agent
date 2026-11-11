@@ -22,16 +22,34 @@ body { margin: 0; background: var(--bg); color: var(--text); font: 15px/1.5 "IBM
 .backdrop.on { opacity: 1; }
 header, .banner, main, form { position: relative; z-index: 1; }
 .sr { position: absolute; left: -9999px; }
-header { display: flex; justify-content: space-between; gap: 16px; align-items: flex-start; padding: 16px 20px; border-bottom: 1px solid var(--line); background: var(--panel); }
-h1 { font-size: 18px; margin: 0 0 2px; }
-.sub { margin: 0; color: var(--muted); font-size: 13px; max-width: 62ch; }
-.actions { display: flex; gap: 12px; align-items: center; flex-shrink: 0; }
-.toggle { font-size: 13px; color: var(--muted); display: flex; gap: 6px; align-items: center; cursor: pointer; }
+/* Header: brand mark + one-line tagline on the left, controls on the right, aligned to the chat column */
+header { background: var(--panel); }
+header::after { content: ""; position: absolute; left: 0; right: 0; bottom: 0; height: 1px; background: linear-gradient(90deg, var(--line), color-mix(in srgb, var(--accent) 55%, var(--line)) 50%, var(--line)); }
+.hbar { max-width: 900px; margin: 0 auto; padding: 14px 16px; display: flex; align-items: center; justify-content: space-between; gap: 16px; }
+.brand { display: flex; align-items: center; gap: 12px; min-width: 0; }
+.mark { flex-shrink: 0; width: 38px; height: 38px; border-radius: 10px; display: grid; place-items: center; color: #fff; background: linear-gradient(135deg, var(--c1), color-mix(in srgb, var(--c1) 55%, var(--c4))); box-shadow: 0 1px 2px rgba(0,0,0,.15), inset 0 1px 0 rgba(255,255,255,.25); }
+.btext { min-width: 0; }
+h1 { font-size: 17px; line-height: 1.25; letter-spacing: -.01em; margin: 0; }
+.sub { margin: 1px 0 0; color: var(--muted); font-size: 13px; }
+.sub .dot { margin: 0 3px; opacity: .7; }
+.nowrap { white-space: nowrap; }
+.actions { display: flex; gap: 14px; align-items: center; flex-shrink: 0; }
+.switch { font-size: 13px; color: var(--muted); display: inline-flex; gap: 8px; align-items: center; cursor: pointer; user-select: none; }
+.switch:hover { color: var(--text); }
+.switch input { appearance: none; -webkit-appearance: none; margin: 0; width: 32px; height: 18px; border-radius: 999px; background: var(--line); position: relative; cursor: pointer; transition: background .15s ease; flex-shrink: 0; }
+.switch input::before { content: ""; position: absolute; top: 2px; left: 2px; width: 14px; height: 14px; border-radius: 50%; background: #fff; box-shadow: 0 1px 2px rgba(0,0,0,.3); transition: transform .15s ease; }
+.switch input:checked { background: var(--accent); }
+.switch input:checked::before { transform: translateX(14px); }
+.switch input:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.switch:has(input:checked) { color: var(--text); }
+@media (prefers-reduced-motion: reduce) { .switch input, .switch input::before { transition: none; } }
+button.newchat { display: inline-flex; align-items: center; gap: 6px; font-size: 13.5px; font-weight: 600; padding: 7px 13px; }
+button.newchat:hover { border-color: var(--accent); color: var(--accent); }
 button { font: inherit; border-radius: 8px; border: 1px solid var(--accent); background: var(--accent); color: var(--accent-text); padding: 8px 14px; cursor: pointer; }
 button.ghost { background: transparent; color: var(--text); border-color: var(--line); }
 button:disabled { opacity: .55; cursor: not-allowed; }
 button:focus-visible, textarea:focus-visible, summary:focus-visible, .chip:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
-.banner { padding: 8px 20px; background: var(--warn-bg); color: var(--warn-text); font-size: 13px; border-bottom: 1px solid var(--line); }
+.banner { padding: 8px max(16px, calc(50% - 434px)); background: var(--warn-bg); color: var(--warn-text); font-size: 13px; border-bottom: 1px solid var(--line); }
 main { flex: 1; width: 100%; max-width: 900px; margin: 0 auto; padding: 20px 16px 20px; display: flex; flex-direction: column; gap: 18px; }
 .welcome { display: grid; gap: 18px; }
 .welcome h2 { font-size: 15px; margin: 0 0 6px; }
@@ -132,7 +150,7 @@ th { color: var(--muted); font-weight: 600; }
 form { position: sticky; bottom: 0; display: flex; gap: 8px; align-items: flex-end; width: 100%; max-width: 900px; margin: 0 auto; padding: 10px 16px 16px; background: linear-gradient(transparent, var(--bg) 25%); }
 textarea { flex: 1; resize: none; font: inherit; color: var(--text); background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 10px 12px; max-height: 160px; }
 #mic.live { border-color: var(--bad); color: var(--bad); }
-@media (max-width: 640px) { .wcol-head { display: block; } .wpct { display: block; } .wcols { grid-template-columns: 1fr 1fr !important; row-gap: 12px; } .wbar { margin-bottom: 4px; } .method-facts div { grid-template-columns: 1fr; gap: 0; } .example { grid-template-columns: 1fr; gap: 2px; } .backdrop-host { display: none; } header { flex-direction: column; } .user { max-width: 92%; } .rank { grid-template-columns: 18px 40px 1fr 36px 52px; gap: 6px; } .rdetail { padding-left: 4px; } .pbar { display: none; } .rtable th:last-child { font-size: 0; } .rtable th:last-child::after { content: "Points"; font-size: 12.5px; } }
+@media (max-width: 640px) { .wcol-head { display: block; } .wpct { display: block; } .wcols { grid-template-columns: 1fr 1fr !important; row-gap: 12px; } .wbar { margin-bottom: 4px; } .method-facts div { grid-template-columns: 1fr; gap: 0; } .example { grid-template-columns: 1fr; gap: 2px; } .backdrop-host { display: none; } .hbar { flex-wrap: wrap; padding: 12px 16px; gap: 10px; } .actions { width: 100%; justify-content: space-between; } .mark { width: 34px; height: 34px; } .sub .dot, .sub .nowrap { display: none; } h1 { font-size: 16px; } .user { max-width: 92%; } .rank { grid-template-columns: 18px 40px 1fr 36px 52px; gap: 6px; } .rdetail { padding-left: 4px; } .pbar { display: none; } .rtable th:last-child { font-size: 0; } .rtable th:last-child::after { content: "Points"; font-size: 12.5px; } }
 
 /* Airport codes read like terminal signage: dark plate, light letters, tracked caps. */
 .iata { display: inline-block; background: var(--text); color: var(--panel); font-weight: 700; letter-spacing: .08em; font-size: 12.5px; line-height: 1.5; padding: 0 7px; border-radius: 4px; text-align: center; }
