@@ -101,9 +101,3 @@ Why these weights: demand pressure is the most direct evidence that capacity wou
 
 ## Verification
 97 tests (scoring, tools against the real snapshot, finance arithmetic and tool, agent loop with a scripted fake model, server, live-status parser with a fixture). `npm run eval` runs the sample questions, follow-ups and an out-of-scope probe against the live model; results are in [EVAL.md](EVAL.md) (recorded before the 6-month on-time rebuild and before airport-specific finance figures, so its figures are older than the current data).
-
-## What I would do next
-- Re-run the live evaluation on the current data, and add a graded rubric and more questions (the current checks are loose; answer quality was judged by reading).
-- Collect CATS figures for the rest of the peer set, then test whether dollar margins belong in the score.
-- Add a fare-based unmet-demand signal (DB1B) and a data-derived replacement for the hand-written runway/policy constraint list.
-- Refresh data on a schedule rather than by hand.
